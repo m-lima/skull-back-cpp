@@ -1,0 +1,29 @@
+# Vim
+**/.*.swp
+
+# Idea
+**/.idea
+
+# Netbeans
+nbproject
+
+# QT Creator
+CMakeLists.txt.user
+
+# Visual Studio
+.vs
+
+# Build
+build
+
+# Output
+lib
+bin
+include
+
+# Secrets
+**/*.hide
+
+# External projects
+ext/*/pack
+
