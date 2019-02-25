@@ -1,5 +1,6 @@
 #include "server.hpp"
 
+#include <fstream>
 #include <memory>
 
 #include <mfl/out.hpp>
@@ -10,6 +11,28 @@ namespace {
   struct ServerTraits : public restinio::default_single_thread_traits_t {
     using request_handler_t = restinio::router::express_router_t<>;
   };
+
+  inline auto createOrOpen(std::string_view path) {
+    std::fstream file;
+
+    file.open(&path.front(), std::ios_base::out | std::ios_base::in);
+    if (file.is_open()) {
+      file.seekg(0, file.end);
+      if (file.tellg() == 0) {
+        file << '[';
+      } else {
+        file.seekg(-1, std::ios_base::end);
+        file << ',';
+      }
+    } else {
+      file.open(&path.front(), std::ios_base::app);
+      if (file.is_open()) {
+        file << '[';
+      }
+    }
+
+    return file;
+  }
 }
 
 namespace server {
@@ -28,21 +51,21 @@ namespace server {
                       .request_handler(std::move(router)));
   }
 
-  restinio::request_handling_status_t getQuick(restinio::request_handle_t request, std::string_view quickValues) {
+  restinio::request_handling_status_t getQuick(restinio::request_handle_t request, std::string_view quickValuesPath) {
     if (!authorized(request)) {
-      return forbid(request);
+      return forbidden(request);
     }
 
     request->create_response(restinio::status_created())
         .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
-        .set_body(restinio::sendfile(quickValues))
+        .set_body(restinio::sendfile(quickValuesPath))
         .done();
     return restinio::request_accepted();
   }
 
-  restinio::request_handling_status_t postSkull(restinio::request_handle_t request, std::string_view skull) {
+  restinio::request_handling_status_t postSkull(restinio::request_handle_t request, std::string_view skullPath) {
     if (!authorized(request)) {
-      return forbid(request);
+      return forbidden(request);
     }
 
     const auto query = restinio::parse_query(request->header().query());
@@ -50,18 +73,34 @@ namespace server {
       return badRequest(request);
     }
 
+    std::fstream skull = createOrOpen(skullPath);
+
+    if (!skull.is_open()) {
+      return internalServerError(request);
+    }
+
+    {
+      using namespace std::chrono;
+      fmt::print(skull,
+                 R"-({{"type":"{:s}","value":{:s},"millis":{:d}}}])-",
+                 query["type"],
+                 query["value"],
+                 duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    }
+    skull.close();
+
     request->create_response(restinio::status_created()).done();
     return restinio::request_accepted();
   }
 
-  restinio::request_handling_status_t getSkull(restinio::request_handle_t request, std::string_view skull) {
+  restinio::request_handling_status_t getSkull(restinio::request_handle_t request, std::string_view skullPath) {
     if (!authorized(request)) {
-      return forbid(request);
+      return forbidden(request);
     }
 
     request->create_response(restinio::status_created())
         .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
-        .set_body(fmt::format(R"-({{"type":"{:s}","value":{}}})-", "type", "value"))
+        .set_body(restinio::sendfile(skullPath))
         .done();
 
     return restinio::request_accepted();
