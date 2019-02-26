@@ -25,6 +25,10 @@ namespace server {
     return fail(request, restinio::status_internal_server_error());
   }
 
+  inline restinio::request_handling_status_t notFound(restinio::request_handle_t request) {
+    return fail(request, restinio::status_not_found());
+  }
+
   void start(std::string && host, std::uint16_t port, std::string_view quickValuePath, std::string_view skullPath);
 
   bool authorized(const std::shared_ptr<const restinio::request_t> request);

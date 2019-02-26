@@ -42,6 +42,7 @@ namespace server {
     router->http_get("/quick", [quickValuePath](auto request, auto) { return getQuick(request, quickValuePath); });
     router->http_post("/skull", [skullPath](auto request, auto) { return postSkull(request, skullPath); });
     router->http_get("/skull", [skullPath](auto request, auto) { return getSkull(request, skullPath); });
+    router->non_matched_request_handler(server::notFound);
 
     mfl::out::println("Listening on {:s}:{:d}..", host, port);
 

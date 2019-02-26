@@ -22,6 +22,14 @@ if (MAKE_TESTS)
   add_executable(skull-test ${TEST_DIR}/test_main.cpp ${TESTS})
   target_link_libraries(skull-test PRIVATE ${TEST_LIBRARIES})
   target_include_directories(skull-test PRIVATE ${TEST_INCLUDE_DIRS})
+  set_target_properties(skull-test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/test"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/test"
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/test"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/test"
+  )
 
   # CTest integration
   gtest_discover_tests(skull-test)
@@ -32,7 +40,7 @@ if (MAKE_TESTS)
   file(COPY ${RESOURCES} DESTINATION ${CMAKE_BINARY_DIR}/test/res)
 
   # Run tests before main build
-  add_custom_target(test-all COMMAND ./bin/skull-test --gtest_shuffle)
+  add_custom_target(test-all COMMAND ./test/skull-test --gtest_shuffle)
   add_dependencies(test-all skull-test)
   add_dependencies(skull test-all)
 endif()

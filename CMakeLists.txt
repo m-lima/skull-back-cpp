@@ -51,6 +51,11 @@ add_library(skull-lib STATIC ${SOURCES})
 target_link_libraries(skull-lib PUBLIC ${LIBRARIES})
 target_include_directories(skull-lib PUBLIC ${INCLUDE_DIRS})
 
+# Copy the resources
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin/res)
+file(GLOB RESOURCES ${SRC_DIR}/res/*)
+file(COPY ${RESOURCES} DESTINATION ${CMAKE_BINARY_DIR}/bin/res)
+
 ##------------------------------------------------------------------------------
 ## Main
 ##

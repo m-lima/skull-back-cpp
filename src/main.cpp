@@ -11,8 +11,8 @@ int main(int argc, char * argv[]) {
 
   std::string host{aHost ? aHost : "localhost"};
   std::uint16_t port{static_cast<uint16_t>(aPort ? std::atoi(aPort) : 8080)};
-  std::string_view quickValuePath{aQuickValuePath ? aQuickValuePath : "quick_values.json"};
-  std::string_view skullPath{aSkullPath ? aSkullPath : "skull.json"};
+  std::string_view quickValuePath{aQuickValuePath ? aQuickValuePath : "res/quick_values.json"};
+  std::string_view skullPath{aSkullPath ? aSkullPath : "res/skull.json"};
 
   server::start(std::move(host), port, quickValuePath, skullPath);
   return 0;
