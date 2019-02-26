@@ -6,13 +6,17 @@
 #include <mfl/out.hpp>
 #include <mfl/string.hpp>
 #include <restinio/all.hpp>
+#include <restinio/transforms/zlib.hpp>
 
 namespace {
+  constexpr const auto ZIP_SKULL = "./skull.zip";
+  constexpr const auto ZIP_QUICK_VALUES = "./quick_values.zip";
+
   struct ServerTraits : public restinio::default_single_thread_traits_t {
     using request_handler_t = restinio::router::express_router_t<>;
   };
 
-  inline auto createOrOpen(std::string_view path) {
+  inline auto createOrOpen(std::string_view path) noexcept {
     std::fstream file;
 
     file.open(&path.front(), std::ios_base::out | std::ios_base::in);
@@ -33,16 +37,41 @@ namespace {
 
     return file;
   }
+
+  inline bool compressionSupported(restinio::request_handle_t request) noexcept {
+    auto compression = request->header().get_field(restinio::http_field::accept_encoding, "");
+    return compression.find("gzip") != std::string::npos;
+  }
+
+  inline restinio::request_handling_status_t forbidden(server::Request request) noexcept {
+    return server::fail(request, restinio::status_forbidden());
+  }
+
+  inline restinio::request_handling_status_t badRequest(server::Request request) noexcept {
+    return server::fail(request, restinio::status_bad_request());
+  }
+
+  inline restinio::request_handling_status_t internalServerError(server::Request request) noexcept {
+    return server::fail(request, restinio::status_internal_server_error());
+  }
+
+  inline restinio::request_handling_status_t notFound(server::Request request) noexcept {
+    return server::fail(request, restinio::status_not_found());
+  }
+
 }
 
 namespace server {
-  void start(std::string && host, std::uint16_t port, std::string_view quickValuePath, std::string_view skullPath) {
+  void listen(std::string && host,
+              std::uint16_t port,
+              std::string_view quickValuePath,
+              std::string_view skullPath) noexcept {
     auto router = std::make_unique<restinio::router::express_router_t<>>();
 
     router->http_get("/quick", [quickValuePath](auto request, auto) { return getQuick(request, quickValuePath); });
     router->http_post("/skull", [skullPath](auto request, auto) { return postSkull(request, skullPath); });
     router->http_get("/skull", [skullPath](auto request, auto) { return getSkull(request, skullPath); });
-    router->non_matched_request_handler(server::notFound);
+    router->non_matched_request_handler(notFound);
 
     mfl::out::println("Listening on {:s}:{:d}..", host, port);
 
@@ -52,7 +81,7 @@ namespace server {
                       .request_handler(std::move(router)));
   }
 
-  restinio::request_handling_status_t getQuick(restinio::request_handle_t request, std::string_view quickValuesPath) {
+  restinio::request_handling_status_t getQuick(Request request, std::string_view quickValuesPath) noexcept {
     if (!authorized(request)) {
       return forbidden(request);
     }
@@ -60,11 +89,14 @@ namespace server {
     request->create_response(restinio::status_created())
         .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
         .set_body(restinio::sendfile(quickValuesPath))
+        .set_body(compressionSupported(request)
+                  ? restinio::sendfile(ZIP_QUICK_VALUES)
+                  : restinio::sendfile(quickValuesPath))
         .done();
     return restinio::request_accepted();
   }
 
-  restinio::request_handling_status_t postSkull(restinio::request_handle_t request, std::string_view skullPath) {
+  restinio::request_handling_status_t postSkull(Request request, std::string_view skullPath) noexcept {
     if (!authorized(request)) {
       return forbidden(request);
     }
@@ -90,29 +122,31 @@ namespace server {
     }
     skull.close();
 
+    // ZLib skull.json
+
     request->create_response(restinio::status_created()).done();
     return restinio::request_accepted();
   }
 
-  restinio::request_handling_status_t getSkull(restinio::request_handle_t request, std::string_view skullPath) {
+  restinio::request_handling_status_t getSkull(Request request, std::string_view skullPath) noexcept {
     if (!authorized(request)) {
       return forbidden(request);
     }
 
     request->create_response(restinio::status_created())
         .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
-        .set_body(restinio::sendfile(skullPath))
+        .set_body(compressionSupported(request) ? restinio::sendfile(ZIP_SKULL) : restinio::sendfile(skullPath))
         .done();
 
     return restinio::request_accepted();
   }
 
-  bool authorized(const std::shared_ptr<const restinio::request_t> request) {
-    if (!request->header().has_field("Cookie")) {
+  bool authorized(ConstRequest request) noexcept {
+    if (!request->header().has_field(restinio::http_field::cookie)) {
       return false;
     }
 
-    auto cookieHeader = request->header().get_field("Cookie");
+    auto cookieHeader = request->header().get_field(restinio::http_field::cookie);
     auto startIndex = cookieHeader.find("session=");
 
     if (startIndex == std::string::npos) {

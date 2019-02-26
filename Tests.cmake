@@ -4,6 +4,8 @@ if (MAKE_TESTS)
   enable_testing()
   include(GoogleTest)
 
+  set(TEST_BIN_DIR "${CMAKE_BINARY_DIR}/test")
+
   # GTest
   list(APPEND TEST_LIBRARIES
       CONAN_PKG::gtest
@@ -22,24 +24,24 @@ if (MAKE_TESTS)
   target_link_libraries(skull-test PRIVATE ${TEST_LIBRARIES})
   target_include_directories(skull-test PRIVATE ${TEST_INCLUDE_DIRS})
   set_target_properties(skull-test PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/test"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/test"
-    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/test"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/test"
+    RUNTIME_OUTPUT_DIRECTORY "${TEST_BIN_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${TEST_BIN_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TEST_BIN_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${TEST_BIN_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${TEST_BIN_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TEST_BIN_DIR}"
   )
 
   # CTest integration
   gtest_discover_tests(skull-test)
 
   # Copy the resources
-  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/test/res)
+  file(MAKE_DIRECTORY ${TEST_BIN_DIR}/res)
   file(GLOB RESOURCES ${TEST_DIR}/res/*)
-  file(COPY ${RESOURCES} DESTINATION ${CMAKE_BINARY_DIR}/test/res)
+  file(COPY ${RESOURCES} DESTINATION ${TEST_BIN_DIR}/res)
 
   # Run tests before main build
-  add_custom_target(test-all COMMAND ./test/skull-test --gtest_shuffle)
+  add_custom_target(test-all COMMAND ${TEST_BIN_DIR}/skull-test --gtest_shuffle)
   add_dependencies(test-all skull-test)
   add_dependencies(skull test-all)
 endif()
