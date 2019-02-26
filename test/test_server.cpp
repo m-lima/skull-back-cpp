@@ -18,7 +18,7 @@ namespace {
     restinio::http_request_header_t header{};
     header.append_field(field, value);
     auto connection = std::make_shared<SimpleConnection>();
-    return std::make_shared<restinio::request_t>(1234, header, std::string{}, connection);
+    return std::make_shared<restinio::request_t>(1234, header, std::string{}, connection, restinio::endpoint_t{});
   }
 }
 

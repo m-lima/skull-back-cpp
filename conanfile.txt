@@ -1,7 +1,8 @@
 [requires]
 mfl/1.0@mfl/stable
-restinio/0.4.8.3@stiffstream/testing
+restinio/0.4.8.5@stiffstream/stable
 boost/1.68.0@conan/stable
+gtest/1.8.1@bincrafters/stable
 
 [generators]
 cmake

@@ -5,10 +5,9 @@ if (MAKE_TESTS)
   include(GoogleTest)
 
   # GTest
-  include("${EXT_DIR}/gtest/gtest.cmake")
   list(APPEND TEST_LIBRARIES
+      CONAN_PKG::gtest
       skull-lib
-      gtest_main
   )
 
   list(APPEND TEST_INCLUDE_DIRS "${SRC_DIR}")
