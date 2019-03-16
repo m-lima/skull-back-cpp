@@ -57,4 +57,4 @@ COPY --from=0 /opt/skull/build/bin/skull /opt/skull/skull
 EXPOSE 8080/tcp
 
 ENTRYPOINT [ "./skull" ]
-CMD [ "-h", "localhost", "-p", "80" ]
+CMD [ "-h", "", "-p", "80" ]
