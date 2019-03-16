@@ -24,7 +24,4 @@ namespace server {
   restinio::request_handling_status_t getQuick(Request, std::string_view quickValuesPath) noexcept;
   restinio::request_handling_status_t postSkull(Request, std::string_view skullPath) noexcept;
   restinio::request_handling_status_t getSkull(Request, std::string_view skullPath) noexcept;
-};
-
-
-
+}

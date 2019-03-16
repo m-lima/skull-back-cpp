@@ -1,8 +1,13 @@
 #include "server.hpp"
 
 #include <mfl/args.hpp>
+#include <mfl/out.hpp>
 
 int main(int argc, char * argv[]) {
+
+  for (int i = 0; i < argc; ++i) {
+    mfl::out::println("{} :: '{}'", i, argv[i]);
+  }
 
   auto aHost = mfl::args::extractOption(argc, argv, "-h");
   auto aPort = mfl::args::extractOption(argc, argv, "-p");

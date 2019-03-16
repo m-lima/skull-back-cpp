@@ -1,0 +1,28 @@
+[
+  {
+    "type": "bepo",
+    "amount": 23.5,
+    "icon": "fas fa-beer"
+  },
+  {
+    "type": "bepo",
+    "amount": 18.5,
+    "icon": "fas fa-seedling"
+  },
+  {
+    "type": "mst",
+    "icon": "fas fa-vial"
+  },
+  {
+    "type": "coffee",
+    "icon": "fas fa-coffee"
+  },
+  {
+    "type": "sns",
+    "icon": "fas fa-receipt"
+  },
+  {
+    "type": "dpr",
+    "icon": "fas fa-baby"
+  }
+]
