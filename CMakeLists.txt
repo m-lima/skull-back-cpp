@@ -28,6 +28,7 @@ conan_basic_setup(TARGETS)
 list(APPEND LIBRARIES CONAN_PKG::mfl)
 list(APPEND LIBRARIES CONAN_PKG::boost)
 list(APPEND LIBRARIES CONAN_PKG::restinio)
+list(APPEND LIBRARIES CONAN_PKG::spdlog)
 
 ##------------------------------------------------------------------------------
 ## Sources
@@ -39,7 +40,7 @@ list(APPEND SOURCES
 
 list(APPEND HEADERS
   ${SRC_DIR}/server.hpp
-  ${SRC_DIR}/quick_values.hpp
+  ${SRC_DIR}/constants.hpp
 )
 
 ##------------------------------------------------------------------------------
