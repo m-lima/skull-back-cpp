@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <boost/filesystem.hpp>
 #include <restinio/all.hpp>
 
 #include "auth.hpp"
@@ -15,13 +16,10 @@ namespace server {
     return restinio::request_rejected();
   }
 
-  void listen(std::string && host,
-              std::uint16_t port,
-              std::string_view quickValuePath,
-              std::string_view skullPath) noexcept;
+  void listen(std::string && host, std::uint16_t port) noexcept;
 
-  bool authorized(ConstRequest) noexcept;
-  restinio::request_handling_status_t getQuick(Request, std::string_view quickValuesPath) noexcept;
-  restinio::request_handling_status_t postSkull(Request, std::string_view skullPath) noexcept;
-  restinio::request_handling_status_t getSkull(Request, std::string_view skullPath) noexcept;
+  std::optional<const boost::filesystem::path> authorize(ConstRequest request) noexcept;
+  restinio::request_handling_status_t getQuick(Request) noexcept;
+  restinio::request_handling_status_t postSkull(Request) noexcept;
+  restinio::request_handling_status_t getSkull(Request) noexcept;
 }

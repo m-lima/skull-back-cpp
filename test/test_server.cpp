@@ -24,45 +24,20 @@ namespace {
 
 TEST(Authorization, missing_header) {
   auto request = buildRequest("foo", "bar");
-  ASSERT_FALSE(server::authorized(request));
+  ASSERT_FALSE(server::authorize(request).has_value());
 }
 
-TEST(Authorization, single_cookie_with_valid_session) {
-  auto request = buildRequest("Cookie", "session=foobar");
-  ASSERT_TRUE(server::authorized(request));
+TEST(Authorization, correct_capitalization) {
+  auto request = buildRequest("X-User", "test@user.com");
+  ASSERT_TRUE(server::authorize(request).has_value());
 }
 
-TEST(Authorization, multiple_cookies_with_valid_session) {
-  auto request = buildRequest("Cookie", "first=second;session=foobar;other=yoman");
-  ASSERT_TRUE(server::authorized(request));
+TEST(Authorization, lower_case) {
+  auto request = buildRequest("x-user", "test@user.com");
+  ASSERT_TRUE(server::authorize(request).has_value());
 }
 
-TEST(Authorization, single_cookie_with_invalid_session) {
-  auto request = buildRequest("Cookie", "session=");
-  ASSERT_FALSE(server::authorized(request));
-}
-
-TEST(Authorization, multiple_cookies_with_invalid_session) {
-  auto request = buildRequest("Cookie", "first=second;session=;other=yoman");
-  ASSERT_FALSE(server::authorized(request));
-}
-
-TEST(Authorization, single_cookie_with_missing_session) {
-  auto request = buildRequest("Cookie", "first=second");
-  ASSERT_FALSE(server::authorized(request));
-}
-
-TEST(Authorization, multiple_cookies_with_missing_session) {
-  auto request = buildRequest("Cookie", "first=second;other=yoman");
-  ASSERT_FALSE(server::authorized(request));
-}
-
-TEST(Authorization, single_cookie_with_empty_session) {
-  auto request = buildRequest("Cookie", "session=");
-  ASSERT_FALSE(server::authorized(request));
-}
-
-TEST(Authorization, multiple_cookies_with_empty_session) {
-  auto request = buildRequest("Cookie", "first=second;session=;other=yoman");
-  ASSERT_FALSE(server::authorized(request));
+TEST(Authorization, upper_case) {
+  auto request = buildRequest("X-USER", "test@user.com");
+  ASSERT_TRUE(server::authorize(request).has_value());
 }

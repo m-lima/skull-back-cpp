@@ -41,7 +41,7 @@ if (MAKE_TESTS)
   file(COPY ${RESOURCES} DESTINATION ${TEST_BIN_DIR}/res)
 
   # Run tests before main build
-  add_custom_target(test-all COMMAND ${TEST_BIN_DIR}/skull-test --gtest_shuffle)
+  add_custom_target(test-all WORKING_DIRECTORY ${TEST_BIN_DIR} COMMAND ./skull-test --gtest_shuffle)
   add_dependencies(test-all skull-test)
   add_dependencies(skull test-all)
 endif()

@@ -26,6 +26,7 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
 list(APPEND LIBRARIES CONAN_PKG::mfl)
+list(APPEND LIBRARIES CONAN_PKG::boost)
 list(APPEND LIBRARIES CONAN_PKG::restinio)
 
 ##------------------------------------------------------------------------------

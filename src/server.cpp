@@ -8,18 +8,19 @@
 #include <restinio/all.hpp>
 #include <restinio/transforms/zlib.hpp>
 
-namespace {
-  constexpr const auto GZ_SKULL = "./skull.gz";
-  constexpr const auto GZ_QUICK_VALUES = "./quick_values.gz";
+#include "constants.hpp"
 
+namespace {
   struct ServerTraits : public restinio::default_single_thread_traits_t {
     using request_handler_t = restinio::router::express_router_t<>;
   };
 
-  inline auto createOrOpen(std::string_view path) noexcept {
+  inline auto createOrOpen(const boost::filesystem::path & path) noexcept {
     std::fstream file;
 
-    file.open(&path.front(), std::ios_base::out | std::ios_base::in);
+    boost::filesystem::create_directories(path.parent_path());
+
+    file.open(path.c_str(), std::ios_base::out | std::ios_base::in);
     if (file.is_open()) {
       file.seekg(0, file.end);
       if (file.tellg() == 0) {
@@ -29,7 +30,7 @@ namespace {
         file << ',';
       }
     } else {
-      file.open(&path.front(), std::ios_base::app);
+      file.open(path.c_str(), std::ios_base::app);
       if (file.is_open()) {
         file << '[';
       }
@@ -39,32 +40,40 @@ namespace {
   }
 
   inline restinio::request_handling_status_t forbidden(server::Request request) noexcept {
+    if (request->header().has_field(constant::header::X_USER)) {
+      mfl::out::println(stderr,
+          "403 Forbidden: {:s} {:s}",
+          request->header().get_field(constant::header::X_USER),
+          request->header().request_target());
+    } else {
+      mfl::out::println(stderr, "403 Forbidden: {:s}", request->header().request_target());
+    }
     return server::fail(request, restinio::status_forbidden());
   }
 
   inline restinio::request_handling_status_t badRequest(server::Request request) noexcept {
+    mfl::out::println(stderr, "400 Bad Request: {:s}", request->header().request_target());
     return server::fail(request, restinio::status_bad_request());
   }
 
   inline restinio::request_handling_status_t internalServerError(server::Request request) noexcept {
+    mfl::out::println(stderr, "500 Internal Server Error: {:s}", request->header().request_target());
     return server::fail(request, restinio::status_internal_server_error());
   }
 
   inline restinio::request_handling_status_t notFound(server::Request request) noexcept {
+    mfl::out::println(stderr, "404 Not Found: {:s}", request->header().request_target());
     return server::fail(request, restinio::status_not_found());
   }
 }
 
 namespace server {
-  void listen(std::string && host,
-              std::uint16_t port,
-              std::string_view quickValuePath,
-              std::string_view skullPath) noexcept {
+  void listen(std::string && host, std::uint16_t port) noexcept {
     auto router = std::make_unique<restinio::router::express_router_t<>>();
 
-    router->http_get("/quick", [quickValuePath](auto request, auto) { return getQuick(request, quickValuePath); });
-    router->http_post("/skull", [skullPath](auto request, auto) { return postSkull(request, skullPath); });
-    router->http_get("/skull", [skullPath](auto request, auto) { return getSkull(request, skullPath); });
+    router->http_get(constant::path::GET_QUICK, [](auto request, auto) { return getQuick(request); });
+    router->http_get(constant::path::GET_SKULL, [](auto request, auto) { return getSkull(request); });
+    router->http_post(constant::path::POST_SKULL, [](auto request, auto) { return postSkull(request); });
     router->non_matched_request_handler(notFound);
 
     mfl::out::println("Listening on {:s}:{:d}..", host, port);
@@ -75,87 +84,111 @@ namespace server {
                       .request_handler(std::move(router)));
   }
 
-  restinio::request_handling_status_t getQuick(Request request, std::string_view quickValuesPath) noexcept {
-    if (!authorized(request)) {
-      return forbidden(request);
-    }
+  restinio::request_handling_status_t getQuick(Request request) noexcept {
+    try {
+      auto user = authorize(request);
+      if (!user) {
+        return forbidden(request);
+      }
 
-    request->create_response(restinio::status_created())
-        .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
-        .set_body(restinio::sendfile(quickValuesPath))
-        .done();
-    return restinio::request_accepted();
-  }
+      auto path = *user / constant::file::QUICK;
 
-  restinio::request_handling_status_t postSkull(Request request, std::string_view skullPath) noexcept {
-    if (!authorized(request)) {
-      return forbidden(request);
-    }
+      std::ifstream quick(path.c_str());
+      if (!quick.good()) {
+        return notFound(request);
+      }
+      quick.close();
 
-    const auto query = restinio::parse_query(request->header().query());
-    if (!query.has("type") || !query.has("value")) {
-      return badRequest(request);
-    }
-
-    std::fstream skull = createOrOpen(skullPath);
-
-    if (!skull.is_open()) {
+      request->create_response(restinio::status_created())
+          .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
+          .set_body(restinio::sendfile(path.string()))
+          .done();
+      return restinio::request_accepted();
+    } catch (...) {
+      mfl::out::println(stderr, "Exception caught", request->header().request_target());
       return internalServerError(request);
     }
-
-    {
-      using namespace std::chrono;
-      fmt::print(skull,
-                 R"-({{"type":"{:s}","value":{:s},"millis":{:d}}}])-",
-                 query["type"],
-                 query["value"],
-                 duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-    }
-    skull.close();
-
-    // ZLib skull.json
-
-    request->create_response(restinio::status_created()).done();
-    return restinio::request_accepted();
   }
 
-  restinio::request_handling_status_t getSkull(Request request, std::string_view skullPath) noexcept {
-    if (!authorized(request)) {
-      return forbidden(request);
+  restinio::request_handling_status_t postSkull(Request request) noexcept {
+    try {
+      auto user = authorize(request);
+      if (!user) {
+        return forbidden(request);
+      }
+
+      const auto query = restinio::parse_query(request->header().query());
+      if (!query.has("type") || !query.has("value")) {
+        return badRequest(request);
+      }
+
+      std::fstream skull = createOrOpen(*user / constant::file::SKULL);
+
+      if (!skull.is_open()) {
+        mfl::out::println(stderr, "Could not open file", request->header().request_target());
+        return internalServerError(request);
+      }
+
+      {
+        using namespace std::chrono;
+        fmt::print(skull,
+                   R"-({{"type":"{:s}","value":{:s},"millis":{:d}}}])-",
+                   query["type"],
+                   query["value"],
+                   duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+      }
+      skull.close();
+
+      // ZLib skull.json
+
+      request->create_response(restinio::status_created()).done();
+      return restinio::request_accepted();
+    } catch (...) {
+      mfl::out::println(stderr, "Exception caught", request->header().request_target());
+      return internalServerError(request);
     }
-
-    request->create_response(restinio::status_created())
-        .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
-        .set_body(restinio::sendfile(skullPath))
-        .done();
-
-    return restinio::request_accepted();
   }
 
-  bool authorized(ConstRequest request) noexcept {
-    if (!request->header().has_field(restinio::http_field::cookie)) {
-      return false;
+  restinio::request_handling_status_t getSkull(Request request) noexcept {
+    try {
+      auto user = authorize(request);
+      if (!user) {
+        return forbidden(request);
+      }
+
+      auto path = *user / constant::file::SKULL;
+
+      std::ifstream quick(path.c_str());
+      if (!quick.good()) {
+        return notFound(request);
+      }
+      quick.close();
+
+      request->create_response(restinio::status_created())
+          .append_header(restinio::http_field::content_type, "text/json; charset=utf-8")
+          .set_body(restinio::sendfile(path.string()))
+          .done();
+
+      return restinio::request_accepted();
+    } catch (...) {
+      mfl::out::println(stderr, "Exception caught", request->header().request_target());
+      return internalServerError(request);
+    }
+  }
+
+  std::optional<const boost::filesystem::path> authorize(ConstRequest request) noexcept {
+    if (!request->header().has_field(constant::header::X_USER)) {
+      return {};
     }
 
-    auto cookieHeader = request->header().get_field(restinio::http_field::cookie);
-    auto startIndex = cookieHeader.find("session=");
+    try {
+      auto userHeader = request->header().get_field(constant::header::X_USER);
+      auto userPath = boost::filesystem::path{constant::file::ROOT} / userHeader;
+      if (boost::filesystem::exists(userPath)) {
+        return std::move(userPath);
+      }
+    } catch (...) {}
 
-    if (startIndex == std::string::npos) {
-      return false;
-    }
-    startIndex += 8;
-
-    auto endIndex = cookieHeader.find(';', startIndex);
-    if (endIndex == std::string::npos) {
-      endIndex = cookieHeader.size();
-    }
-
-    std::string session{cookieHeader.cbegin() + startIndex, cookieHeader.cbegin() + endIndex};
-
-    if (session.empty()) {
-      return false;
-    }
-
-    return true;
+    return {};
   }
 }
