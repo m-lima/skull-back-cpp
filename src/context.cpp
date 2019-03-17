@@ -12,6 +12,7 @@ namespace {
     switch (method) {
       case restinio::http_method_get(): return "GET";
       case restinio::http_method_post(): return "POST";
+      case restinio::http_method_options(): return "OPTIONS";
       default: return "UNKNOWN";
     }
   }
