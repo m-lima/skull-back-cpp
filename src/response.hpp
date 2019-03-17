@@ -9,7 +9,6 @@
 
 class Response {
   restinio::response_builder_t<restinio::restinio_controlled_output_t> response;
-  const std::regex ORIGIN_REGEX{constant::cors::ORIGIN};
 
 public:
   Response(Context &&, restinio::http_status_line_t &&);
