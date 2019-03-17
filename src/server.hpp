@@ -18,6 +18,7 @@ namespace server {
 
   void listen(std::string && host, std::uint16_t port) noexcept;
 
+  Handler preflight(Context &&) noexcept;
   Handler getQuick(Context &&) noexcept;
   Handler postSkull(Context &&) noexcept;
   Handler getSkull(Context &&) noexcept;

@@ -65,6 +65,7 @@ namespace server {
     router->http_get(constant::path::GET_QUICK, [](auto request, auto) { return getQuick(request); });
     router->http_get(constant::path::GET_SKULL, [](auto request, auto) { return getSkull(request); });
     router->http_post(constant::path::POST_SKULL, [](auto request, auto) { return postSkull(request); });
+    router->add_handler(restinio::http_method_options(), "/", [](auto request, auto) { return preflight(request)});
     router->non_matched_request_handler([] (auto request) { return notFound(request); });
 
     spdlog::info("Listening on {:s}:{:d}..", host, port);
@@ -73,6 +74,10 @@ namespace server {
                       .address(std::move(host))
                       .port(port)
                       .request_handler(std::move(router)));
+  }
+
+  Handler preflight(Context && context) noexcept {
+    return Response{std::move(context), restinio::status_ok()}.done();
   }
 
   Handler getQuick(Context && context) noexcept {
