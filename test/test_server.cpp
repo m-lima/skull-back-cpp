@@ -22,22 +22,22 @@ namespace {
   }
 }
 
-TEST(Authorization, missing_header) {
-  auto request = buildRequest("foo", "bar");
-  ASSERT_FALSE(server::authorize(request).has_value());
-}
-
-TEST(Authorization, correct_capitalization) {
-  auto request = buildRequest("X-User", "test@user.com");
-  ASSERT_TRUE(server::authorize(request).has_value());
-}
-
-TEST(Authorization, lower_case) {
-  auto request = buildRequest("x-user", "test@user.com");
-  ASSERT_TRUE(server::authorize(request).has_value());
-}
-
-TEST(Authorization, upper_case) {
-  auto request = buildRequest("X-USER", "test@user.com");
-  ASSERT_TRUE(server::authorize(request).has_value());
-}
+//TEST(Authorization, missing_header) {
+//  auto request = buildRequest("foo", "bar");
+//  ASSERT_FALSE(server::authorize(request).has_value());
+//}
+//
+//TEST(Authorization, correct_capitalization) {
+//  auto request = buildRequest("X-User", "test@user.com");
+//  ASSERT_TRUE(server::authorize(request).has_value());
+//}
+//
+//TEST(Authorization, lower_case) {
+//  auto request = buildRequest("x-user", "test@user.com");
+//  ASSERT_TRUE(server::authorize(request).has_value());
+//}
+//
+//TEST(Authorization, upper_case) {
+//  auto request = buildRequest("X-USER", "test@user.com");
+//  ASSERT_TRUE(server::authorize(request).has_value());
+//}

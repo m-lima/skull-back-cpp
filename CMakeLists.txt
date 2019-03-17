@@ -35,12 +35,14 @@ list(APPEND LIBRARIES CONAN_PKG::spdlog)
 ##
 
 list(APPEND SOURCES
+  ${SRC_DIR}/context.cpp
+  ${SRC_DIR}/response.cpp
   ${SRC_DIR}/server.cpp
 )
 
 list(APPEND HEADERS
-  ${SRC_DIR}/server.hpp
   ${SRC_DIR}/constants.hpp
+  ${SRC_DIR}/server.hpp
 )
 
 ##------------------------------------------------------------------------------
