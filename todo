@@ -1,0 +1,4 @@
+[ ]  Reduce compile time
+[ ]! More tests
+[ ]. Avoid std::move if not necessary
+[ ]. CMake envsubst
