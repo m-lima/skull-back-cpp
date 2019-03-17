@@ -65,7 +65,6 @@ namespace server {
     router->http_get(constant::path::GET_QUICK, [](auto request, auto) { return getQuick(request); });
     router->http_get(constant::path::GET_SKULL, [](auto request, auto) { return getSkull(request); });
     router->http_post(constant::path::POST_SKULL, [](auto request, auto) { return postSkull(request); });
-    router->add_handler(restinio::http_method_options(), "/", [](auto request, auto) { return preflight(request); });
     router->non_matched_request_handler([] (auto request) { return notFound(request); });
 
     spdlog::info("Listening on {:s}:{:d}..", host, port);
@@ -125,7 +124,7 @@ namespace server {
       if (!context.authorized()) return forbidden(std::move(context));
 
       const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has("type") || !query.has("value")) {
+      if (!query.has("type") || !query.has("amount")) {
         return badRequest(std::move(context));
       }
 
@@ -139,9 +138,9 @@ namespace server {
       {
         using namespace std::chrono;
         fmt::print(skull,
-                   R"-({{"type":"{:s}","value":{:s},"millis":{:d}}}])-",
+                   R"-({{"type":"{:s}","amount":{:s},"millis":{:d}}}])-",
                    query["type"],
-                   query["value"],
+                   query["amount"],
                    duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
       }
       skull.close();
