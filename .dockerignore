@@ -2,3 +2,5 @@ Dockerfile
 .dockerignore
 .git
 build
+build.sh
+data

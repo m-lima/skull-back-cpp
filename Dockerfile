@@ -54,7 +54,7 @@ WORKDIR /opt/skull
 
 COPY --from=0 /opt/skull/build/bin/skull /opt/skull/skull
 
-EXPOSE 8080/tcp
+EXPOSE 80
 
 ENTRYPOINT [ "./skull" ]
 CMD [ "-h", "", "-p", "80" ]
