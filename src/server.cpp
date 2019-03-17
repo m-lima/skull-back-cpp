@@ -124,7 +124,7 @@ namespace server {
       if (!context.authorized()) return forbidden(std::move(context));
 
       const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has("type") || !query.has("value")) {
+      if (!query.has("type") || !query.has("amount")) {
         return badRequest(std::move(context));
       }
 
@@ -138,9 +138,9 @@ namespace server {
       {
         using namespace std::chrono;
         fmt::print(skull,
-                   R"-({{"type":"{:s}","value":{:s},"millis":{:d}}}])-",
+                   R"-({{"type":"{:s}","amount":{:s},"millis":{:d}}}])-",
                    query["type"],
-                   query["value"],
+                   query["amount"],
                    duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
       }
       skull.close();
