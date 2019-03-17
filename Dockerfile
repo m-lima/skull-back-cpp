@@ -1,5 +1,4 @@
 FROM ubuntu:bionic
-#FROM conanio/clang50
 
 WORKDIR /opt/skull
 
@@ -42,6 +41,9 @@ RUN cd build && \
     conan install .. --build missing
 
 COPY . .
+
+RUN . ./cfg/origin.env && \
+    sed -i 's~$ORIGIN~'"${ORIGIN}"'~' ./src/constants.hpp
 
 RUN cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
