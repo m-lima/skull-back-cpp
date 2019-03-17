@@ -1,7 +1,8 @@
 docker build -t skull .
 docker stop skull
 docker rm skull
+. data_location.env
 docker create \
   --name skull \
-  --volume skull-data:/data \
+  --volume "${DATA_LOCATION}":/data \
   skull
