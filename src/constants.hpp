@@ -15,12 +15,6 @@ namespace constant {
 
   namespace header {
     constexpr const auto X_USER = "X-User";
-    constexpr const auto ORIGIN = "Origin";
-  }
-
-  namespace cors {
-    constexpr const auto ALLOW_CORS = true;
-    constexpr const auto ORIGIN = "$ORIGIN";
   }
 
   namespace user {

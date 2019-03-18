@@ -1,8 +1,7 @@
 #pragma once
 
-#include <regex>
-
 #include <restinio/all.hpp>
+#include <spdlog/spdlog.h>
 
 #include "constants.hpp"
 #include "context.hpp"
@@ -11,7 +10,14 @@ class Response {
   restinio::response_builder_t<restinio::restinio_controlled_output_t> response;
 
 public:
-  Response(Context &&, restinio::http_status_line_t &&);
+  Response(Context && context, restinio::http_status_line_t && status)
+      : response{context.request->create_response(status)} {
+    spdlog::log(status.status_code().raw_code() < 300 ? spdlog::level::info : spdlog::level::warn,
+                "{} {:d} {:s}",
+                context,
+                status.status_code().raw_code(),
+                status.reason_phrase());
+  }
 
   inline Response && appendHeader(restinio::http_field_t field, std::string && value) && {
     response.append_header(field, std::move(value));

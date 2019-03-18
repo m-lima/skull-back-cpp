@@ -42,9 +42,6 @@ RUN cd build && \
 
 COPY . .
 
-RUN . ./cfg/origin.env && \
-    sed -i 's~$ORIGIN~'"${ORIGIN}"'~' ./src/constants.hpp
-
 RUN cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make

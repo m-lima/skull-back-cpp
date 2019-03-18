@@ -36,7 +36,6 @@ list(APPEND LIBRARIES CONAN_PKG::spdlog)
 
 list(APPEND SOURCES
   ${SRC_DIR}/context.cpp
-  ${SRC_DIR}/response.cpp
   ${SRC_DIR}/server.cpp
 )
 
