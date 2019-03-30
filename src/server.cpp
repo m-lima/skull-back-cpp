@@ -128,6 +128,10 @@ namespace server {
         return badRequest(std::move(context));
       }
 
+      if (query["type"] == "undefined" || query["amount"] == "undefined") {
+        return badRequest(std::move(context));
+      }
+
       std::fstream skull = createOrOpen(*context.root / constant::file::SKULL);
 
       if (!skull.is_open()) {
