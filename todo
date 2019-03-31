@@ -2,3 +2,5 @@
 [ ]! More tests
 [ ]. Avoid std::move if not necessary
 [ ]. CMake envsubst
+[ ]! Reject ammount = 0
+[ ]  Backup daily
