@@ -5,11 +5,13 @@
 #include <boost/filesystem.hpp>
 #include <restinio/all.hpp>
 
+#include "user.hpp"
+
 class Context {
 public:
   const std::uint16_t id;
   const restinio::request_handle_t request;
-  const std::string user;
+  const User user;
   const std::optional<const boost::filesystem::path> root;
 
   Context(restinio::request_handle_t request);
@@ -29,7 +31,7 @@ namespace fmt {
 
     template <typename FormatContext>
     auto format(const Context & context, FormatContext & ctx) {
-      return format_to(ctx.begin(), "[{:0>5}] ({:s})", context.id, context.user);
+      return format_to(ctx.begin(), "[{:0>5}] ({:s})", context.id, context.user.name);
     }
   };
 }

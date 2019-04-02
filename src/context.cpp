@@ -12,6 +12,7 @@ namespace {
     switch (method) {
       case restinio::http_method_get(): return "GET";
       case restinio::http_method_post(): return "POST";
+      case restinio::http_method_delete(): return "DELETE";
       case restinio::http_method_options(): return "OPTIONS";
       default: return "UNKNOWN";
     }
@@ -30,7 +31,7 @@ Context::Context(restinio::request_handle_t request)
         }
 
         try {
-          auto userPath = boost::filesystem::path{constant::file::ROOT} / user;
+          auto userPath = boost::filesystem::path{constant::file::ROOT} / user.name;
           if (boost::filesystem::exists(userPath)) {
             return std::move(userPath);
           }

@@ -2,5 +2,6 @@
 [ ]! More tests
 [ ]. Avoid std::move if not necessary
 [ ]. CMake envsubst
-[ ]! Reject ammount = 0
+[ ]! Reject amount = 0
 [ ]  Backup daily
+[ ]! Lock down other methods by same user when one method is taking place

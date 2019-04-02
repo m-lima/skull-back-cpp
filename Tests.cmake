@@ -16,6 +16,7 @@ if (MAKE_TESTS)
 
   # Test sources
   list(APPEND TESTS
+    ${TEST_DIR}/test_models.cpp
     ${TEST_DIR}/test_server.cpp
   )
 

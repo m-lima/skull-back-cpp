@@ -3,7 +3,6 @@
 #include <fstream>
 #include <memory>
 
-#include <mfl/string.hpp>
 #include <restinio/all.hpp>
 #include <restinio/transforms/zlib.hpp>
 #include <spdlog/spdlog.h>
@@ -65,6 +64,7 @@ namespace server {
     router->http_get(constant::path::GET_QUICK, [](auto request, auto) { return getQuick(request); });
     router->http_get(constant::path::GET_SKULL, [](auto request, auto) { return getSkull(request); });
     router->http_post(constant::path::POST_SKULL, [](auto request, auto) { return postSkull(request); });
+    router->http_delete(constant::path::DELETE_SKULL, [](auto request, auto) { return deleteSkull(request); });
     router->non_matched_request_handler([] (auto request) { return notFound(request); });
 
     spdlog::info("Listening on {:s}:{:d}..", host, port);
@@ -73,10 +73,6 @@ namespace server {
                       .address(std::move(host))
                       .port(port)
                       .request_handler(std::move(router)));
-  }
-
-  Handler preflight(Context && context) noexcept {
-    return Response{std::move(context), restinio::status_ok()}.done();
   }
 
   Handler getQuick(Context && context) noexcept {
@@ -128,7 +124,10 @@ namespace server {
         return badRequest(std::move(context));
       }
 
-      if (query["type"] == "undefined" || query["amount"] == "undefined") {
+      auto type = query["type"];
+      auto amount = query["amount"];
+
+      if (type == "undefined" || amount == "undefined") {
         return badRequest(std::move(context));
       }
 
@@ -143,15 +142,50 @@ namespace server {
         using namespace std::chrono;
         fmt::print(skull,
                    R"-({{"type":"{:s}","amount":{:s},"millis":{:d}}}])-",
-                   query["type"],
-                   query["amount"],
+                   type,
+                   amount,
                    duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
       }
       skull.close();
 
-      // ZLib skull.json
-
       return Response{std::move(context), restinio::status_created()}.done();
+    } catch (const std::exception & e) {
+      spdlog::error("{} Exception: {:s}", context, e.what());
+      return internalServerError(std::move(context));
+    }
+  }
+
+  Handler deleteSkull(Context && context) noexcept {
+    try {
+      if (!context.authorized()) return forbidden(std::move(context));
+
+      const auto query = restinio::parse_query(context.request->header().query());
+      if (!query.has("type") || !query.has("amount") || !query.has("millis")) {
+        return badRequest(std::move(context));
+      }
+
+      auto type = query["type"];
+      auto amount = query["amount"];
+      auto millis = query["millis"];
+
+      if (type == "undefined" || amount == "undefined" || millis == "undefined") {
+        return badRequest(std::move(context));
+      }
+
+      std::fstream skull = createOrOpen(*context.root / constant::file::SKULL);
+
+      if (!skull.is_open()) {
+        spdlog::error("{} Could not open file", context);
+        return Response{std::move(context), restinio::status_accepted()}.done();
+      }
+
+      std::string buffer;
+      while (std::getline(skull, buffer, '}')) {
+        auto index = buffer.find('{');
+      }
+      skull.close();
+
+      return Response{std::move(context), restinio::status_accepted()}.done();
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));
