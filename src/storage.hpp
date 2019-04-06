@@ -33,6 +33,11 @@ public:
     auto values = mSkullValues.find(user);
     if (values == mSkullValues.end()) return;
 
+    if (values->second.empty()) {
+      stream << "[]";
+      return;
+    }
+
     stream << "[";
     auto end = values->second.cend() - 1;
     for (auto it = values->second.cbegin(); it != end; ++it) {
