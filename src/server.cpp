@@ -13,40 +13,7 @@
 #include "storage.hpp"
 
 namespace {
-  struct LogWrapper {
-    template <typename L>
-    void trace(L && log) {
-      spdlog::trace(log());
-    }
-
-    template <typename L>
-    void info(L & log) {
-      spdlog::info(log());
-    }
-
-    template <typename L>
-    void warn(L && log) {
-      spdlog::warn(log());
-    }
-
-    template <typename L>
-    void error(L && log) {
-      spdlog::error(log());
-    }
-  };
-
   Storage storage;
-
-//  struct ServerTraits : public restinio::default_single_thread_traits_t {
-//  };
-
-//  struct ServerTraits {
-//    using timer_manager_t = restinio::asio_timer_manager_t;
-//    using logger_t = restinio::null_logger_t;
-//    using request_handler_t = restinio::router::express_router_t<>;
-//    using strand_t = asio::strand<asio::executor>;
-//    using stream_socket_t = Socket;
-//  };
 
   struct ServerMode {
     using SingleThread = asio::strand<asio::executor>;
@@ -56,7 +23,6 @@ namespace {
   template <typename Strand>
   using ServerTraits = restinio::traits_t<restinio::asio_timer_manager_t,
       restinio::null_logger_t,
-//      LogWrapper,
       restinio::router::express_router_t<>,
       Strand>;
 
