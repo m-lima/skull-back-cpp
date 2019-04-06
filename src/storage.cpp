@@ -1,5 +1,6 @@
 #include "storage.hpp"
 
+#include <regex>
 #include <sstream>
 #include <thread>
 
@@ -22,15 +23,15 @@ namespace {
   void save(const std::unordered_map<User, std::vector<SkullValue>>::const_iterator & skullValues,
             std::unique_lock<std::mutex> &&) {
 
-    auto userPath = (boost::filesystem::path{constant::file::ROOT}
-                     / skullValues->first.name
-                     / constant::file::SKULL).generic_string();
+    const auto userPath = (boost::filesystem::path{constant::file::ROOT}
+                           / skullValues->first.name
+                           / constant::file::SKULL).generic_string();
 
     std::ofstream file;
     file.open(userPath);
 
     if (!file.good()) {
-      spdlog::error("Failed to open {:s}", userPath);
+      spdlog::error("Failed to open {:s} for saving", userPath);
       return;
     }
 
@@ -38,20 +39,73 @@ namespace {
 
     file.close();
   }
+
+  template <typename T>
+  std::optional<std::smatch> parseValue(std::ifstream & file) {
+    std::string buffer;
+
+    std::getline(file, buffer, '{');
+    if (buffer.empty() || buffer[0] == ']') {
+      return {};
+    }
+
+    std::getline(file, buffer, '}');
+
+    std::smatch match;
+    static_assert(std::disjunction_v<std::is_same<T, QuickValue>, std::is_same<T, SkullValue>>);
+    if constexpr (std::is_same<T, QuickValue>::value) {
+      static const std::regex quickValueRegex{R""("type":"(.+)","amount":([0-9]+),"icon":"(.+)")""};
+      if (!std::regex_match(buffer, match, quickValueRegex)) {
+        spdlog::error("Unmatched value entry {:s}", buffer);
+        return {};
+      }
+    } else if (std::is_same<T, SkullValue>::value) {
+      static const std::regex skullValueRegex{R""("type":"(.+)","amount":([0-9]+),"millis":([0-9]+))""};
+      if (!std::regex_match(buffer, match, skullValueRegex)) {
+        spdlog::error("Unmatched value entry {:s}", buffer);
+        return {};
+      }
+    }
+
+    if (match.size() != 4) {
+      spdlog::error("Malformed value entry {:s}", buffer);
+      return {};
+    }
+
+    return std::make_optional(match);
+  }
+
+  template <typename T>
+  std::vector<T> loadValues(const std::string & path) {
+    std::ifstream file;
+    file.open(path);
+
+    if (!file.good()) {
+      spdlog::error("Failed to open {:s} for loading", path);
+      return {};
+    }
+
+    std::vector<T> output;
+    while (true) {
+      auto match = parseValue<T>(file);
+      if (!match) break;
+      output.emplace_back((*match)[1], (*match)[2], (*match)[3]);
+    }
+
+    return output;
+  }
 }
 
 Storage::Storage() {
-  mQuickValues.try_emplace("user");
-  mSkullValues.try_emplace("user");
-  mMutexes.try_emplace("user");
+  auto root = boost::filesystem::path{constant::file::ROOT};
 
-  mQuickValues["user"].emplace_back("type", "1", "icon");
-  mQuickValues["user"].emplace_back("type2", "2", "icon");
-  mQuickValues["user"].emplace_back("type3", "3", "icon");
-
-  mSkullValues["user"].emplace_back("type", "1", "icon");
-  mSkullValues["user"].emplace_back("type2", "2", "icon");
-  mSkullValues["user"].emplace_back("type3", "3", "icon");
+  for (auto it{boost::filesystem::directory_iterator{root}}; it != boost::filesystem::directory_iterator{}; ++it) {
+    auto user = it->path().filename().generic_string();
+    spdlog::info("Found user: {:s}", user);
+    mQuickValues.try_emplace(user, loadValues<QuickValue>((it->path() / constant::file::QUICK).generic_string()));
+    mSkullValues.try_emplace(user, loadValues<SkullValue>((it->path() / constant::file::SKULL).generic_string()));
+    mMutexes.try_emplace(user);
+  }
 }
 
 std::string Storage::getQuickValues(const User & user) const {
