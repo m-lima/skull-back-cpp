@@ -112,13 +112,9 @@ namespace server {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
-      auto values = storage.getQuickValues(context.user);
-
-      if (!values) return notFound(std::move(context));
-
       return context.createResponse(restinio::status_ok())
           .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
-          .setBody(*values)
+          .setBody(storage.getQuickValues(context.user))
           .done();
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
@@ -130,14 +126,11 @@ namespace server {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
-      auto values = storage.getSkullValues(context.user);
+      auto response = context.createResponse<restinio::chunked_output_t>(restinio::status_ok())
+          .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8");
 
-      if (!values) return notFound(std::move(context));
-
-      return context.createResponse(restinio::status_ok())
-          .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
-          .setBody(*values)
-          .done();
+      storage.streamSkullValues(context.user, response);
+      return response.done();
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));

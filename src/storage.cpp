@@ -54,21 +54,21 @@ Storage::Storage() {
   mSkullValues["user"].emplace_back("type3", "3", "icon");
 }
 
-std::optional<std::string> Storage::getQuickValues(const User & user) const {
+std::string Storage::getQuickValues(const User & user) const {
   auto quickValues = mQuickValues.find(user);
-  if (quickValues == mQuickValues.end()) return {};
+  if (quickValues == mQuickValues.end()) return "[]";
 
   std::stringstream stream;
   convertToString(quickValues->second, stream);
   return {stream.str()};
 }
 
-std::optional<std::string> Storage::getSkullValues(const User & user) {
+std::string Storage::getSkullValues(const User & user) {
   auto skullValues = mSkullValues.find(user);
-  if (skullValues == mSkullValues.end()) return {};
+  if (skullValues == mSkullValues.end()) return "[]";
 
   auto mutex = mMutexes.find(user);
-  if (mutex == mMutexes.end()) return {};
+  if (mutex == mMutexes.end()) return "[]";
 
   std::lock_guard lock{mutex->second};
 
@@ -110,4 +110,3 @@ bool Storage::deleteSkullValue(const User & user,
   saver.detach();
   return true;
 }
-

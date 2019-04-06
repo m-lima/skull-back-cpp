@@ -4,12 +4,13 @@
 
 #include "constants.hpp"
 
-template <typename T, typename C>
+template <typename T, typename C, std::size_t MAX_BUFFER = 1024>
 class Response {
   friend class Context;
 
   restinio::response_builder_t<T> response;
   const C callback;
+  std::size_t bufferSize;
 
   Response(restinio::response_builder_t<T> && response, C && callback)
       : response{std::move(response)},
@@ -64,5 +65,17 @@ public:
   inline restinio::request_handling_status_t done() {
     callback(response.header().status_line());
     return response.done();
+  }
+
+  friend inline Response & operator<<(Response<T, C> & response, const std::string & value) {
+    response.response.append_chunk(value);
+    response.bufferSize += value.size();
+
+    if (response.bufferSize > MAX_BUFFER) {
+      response.response.flush();
+      response.bufferSize = 0;
+    }
+
+    return response;
   }
 };
