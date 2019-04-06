@@ -17,12 +17,14 @@ private:
   std::unordered_map<User, std::mutex> mMutexes;
 
 public:
+  Storage();
+
   inline bool authorized(const User & user) const {
     return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.end();
   }
 
-  const std::vector<QuickValue> * getQuickValues(const User & user) const;
-  const std::vector<SkullValue> * getSkullValues(const User & user);
+  std::optional<std::string> getQuickValues(const User & user) const;
+  std::optional<std::string> getSkullValues(const User & user);
   bool addSkullValue(const User & user, SkullValue && skullValue);
   bool deleteSkullValue(const User & user, const SkullValue & skullValue);
 };

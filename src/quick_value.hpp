@@ -3,27 +3,41 @@
 #include <string>
 
 struct QuickValue {
-  const std::string type;
-  const std::string amount;
-  const std::string icon;
+private:
+  std::string mType;
+  std::string mAmount;
+  std::string mIcon;
 
+public:
   template <typename A, typename B, typename C>
   QuickValue(A && type,
              B && amount,
              C && icon)
-      : type{std::forward<A>(type)},
-        amount{std::forward<B>(amount)},
-        icon{std::forward<C>(icon)} {}
+      : mType{std::forward<A>(type)},
+        mAmount{std::forward<B>(amount)},
+        mIcon{std::forward<C>(icon)} {}
 
   inline std::string json() const {
-    return R"({"type":")" + type
-           + R"(","amount":)" + amount
-           + R"(,"icon":")" + icon
+    return R"({"type":")" + mType
+           + R"(","amount":)" + mAmount
+           + R"(,"icon":")" + mIcon
            + "\"}";
   }
 
+  inline const std::string & type() const {
+    return mType;
+  }
+
+  inline const std::string & amount() const {
+    return mAmount;
+  }
+
+  inline const std::string & icon() const {
+    return mIcon;
+  }
+
   inline bool operator==(const QuickValue & rhs) const {
-    return type == rhs.type && amount == rhs.amount && icon == rhs.icon;
+    return mType == rhs.mType && mAmount == rhs.mAmount && mIcon == rhs.mIcon;
   }
 
   inline bool operator!=(const QuickValue & rhs) const {
@@ -32,9 +46,9 @@ struct QuickValue {
 
   friend std::ostream & operator<<(std::ostream & stream,
                                    const QuickValue & value) {
-    stream << R"({"type":")" << value.type
-           << R"(","amount":)" << value.amount
-           << R"(,"icon":)" << value.icon
+    stream << R"({"type":")" << value.mType
+           << R"(","amount":)" << value.mAmount
+           << R"(,"icon":)" << value.mIcon
            << '}';
     return stream;
   }

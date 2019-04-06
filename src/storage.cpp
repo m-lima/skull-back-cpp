@@ -1,5 +1,6 @@
 #include "storage.hpp"
 
+#include <sstream>
 #include <thread>
 
 #include <boost/filesystem.hpp>
@@ -8,6 +9,16 @@
 #include "constants.hpp"
 
 namespace {
+  template <typename T, typename S>
+  void convertToString(const std::vector<T> & vector, S & stream) {
+    stream << '[';
+    auto end = vector.cend() - 1;
+    for (auto it = vector.cbegin(); it != end; ++it) {
+      stream << *it << ',';
+    }
+    stream << *end << ']';
+  }
+
   void save(const std::unordered_map<User, std::vector<SkullValue>>::const_iterator & skullValues,
             std::unique_lock<std::mutex> &&) {
 
@@ -23,34 +34,47 @@ namespace {
       return;
     }
 
-    file << '[';
-    auto end = skullValues->second.cend() - 1;
-    for (auto it = skullValues->second.cbegin(); it != end; ++it) {
-      file << *it << ',';
-    }
-    file << *end << ']';
+    convertToString(skullValues->second, file);
 
     file.close();
   }
 }
 
-const std::vector<QuickValue> * Storage::getQuickValues(const User & user) const {
-  auto quickValues = mQuickValues.find(user);
-  if (quickValues == mQuickValues.end()) return nullptr;
+Storage::Storage() {
+  mQuickValues.try_emplace("user");
+  mSkullValues.try_emplace("user");
+  mMutexes.try_emplace("user");
 
-  return &quickValues->second;
+  mQuickValues["user"].emplace_back("type", "1", "icon");
+  mQuickValues["user"].emplace_back("type2", "2", "icon");
+  mQuickValues["user"].emplace_back("type3", "3", "icon");
+
+  mSkullValues["user"].emplace_back("type", "1", "icon");
+  mSkullValues["user"].emplace_back("type2", "2", "icon");
+  mSkullValues["user"].emplace_back("type3", "3", "icon");
 }
 
-const std::vector<SkullValue> * Storage::getSkullValues(const User & user) {
+std::optional<std::string> Storage::getQuickValues(const User & user) const {
+  auto quickValues = mQuickValues.find(user);
+  if (quickValues == mQuickValues.end()) return {};
+
+  std::stringstream stream;
+  convertToString(quickValues->second, stream);
+  return {stream.str()};
+}
+
+std::optional<std::string> Storage::getSkullValues(const User & user) {
   auto skullValues = mSkullValues.find(user);
-  if (skullValues == mSkullValues.end()) return nullptr;
+  if (skullValues == mSkullValues.end()) return {};
 
   auto mutex = mMutexes.find(user);
-  if (mutex == mMutexes.end()) return nullptr;
+  if (mutex == mMutexes.end()) return {};
 
-  mutex->second.lock();
   std::lock_guard lock{mutex->second};
-  return &skullValues->second;
+
+  std::stringstream stream;
+  convertToString(skullValues->second, stream);
+  return {stream.str()};
 }
 
 bool Storage::addSkullValue(const User & user, SkullValue && skullValue) {

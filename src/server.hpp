@@ -15,7 +15,7 @@ namespace server {
     return Response{std::move(context), std::move(status)}.connectionClose().done();
   }
 
-  void listen(std::string && host, std::uint16_t port) noexcept;
+  void listen(std::string && host, std::uint16_t port, std::uint16_t threadCount) noexcept;
 
   Handler getQuick(Context &&) noexcept;
   Handler postSkull(Context &&) noexcept;

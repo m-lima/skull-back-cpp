@@ -37,7 +37,7 @@ namespace {
 }
 
 namespace server {
-  void listen(std::string && host, std::uint16_t port) noexcept {
+  void listen(std::string && host, std::uint16_t port, std::uint16_t threadCount) noexcept {
     auto router = std::make_unique<restinio::router::express_router_t<>>();
 
     router->http_get(constant::path::GET_QUICK, [](auto request, auto) { return getQuick(request); });
@@ -46,12 +46,21 @@ namespace server {
     router->http_delete(constant::path::DELETE_SKULL, [](auto request, auto) { return deleteSkull(request); });
     router->non_matched_request_handler([](auto request) { return notFound(request); });
 
-    spdlog::info("Listening on {:s}:{:d}..", host, port);
+    if (threadCount < 2) {
+      spdlog::info("Listening on {:s}:{:d} on a single thread..", host, port);
 
-    restinio::run(restinio::on_this_thread<ServerTraits>()
-                      .address(std::move(host))
-                      .port(port)
-                      .request_handler(std::move(router)));
+      restinio::run(restinio::on_this_thread<ServerTraits>()
+                        .address(std::move(host))
+                        .port(port)
+                        .request_handler(std::move(router)));
+    } else {
+      spdlog::info("Listening on {:s}:{:d} on {:d} threads..", host, port, threadCount);
+
+      restinio::run(restinio::on_thread_pool<ServerTraits>(threadCount)
+                        .address(std::move(host))
+                        .port(port)
+                        .request_handler(std::move(router)));
+    }
   }
 
   Handler getQuick(Context && context) noexcept {
@@ -106,6 +115,10 @@ namespace server {
                          query[constant::query::AMOUNT],
                          std::to_string(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count())};
 
+        if (value.type().empty() || value.amount().empty()) {
+          return badRequest(std::move(context));
+        }
+
         if (value.type() == constant::query::UNDEFINED || value.amount() == constant::query::UNDEFINED) {
           return badRequest(std::move(context));
         }
@@ -132,6 +145,10 @@ namespace server {
       }
 
       SkullValue value{query[constant::query::TYPE], query[constant::query::AMOUNT], query[constant::query::MILLIS]};
+
+      if (value.type().empty() || value.amount().empty() || value.millis().empty()) {
+        return badRequest(std::move(context));
+      }
 
       if (value.type() == constant::query::UNDEFINED
           || value.amount() == constant::query::UNDEFINED

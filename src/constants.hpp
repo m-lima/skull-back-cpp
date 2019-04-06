@@ -11,7 +11,7 @@ namespace constant {
   }
 
   namespace file {
-    constexpr const auto ROOT = "/data";
+    constexpr const auto ROOT = "data";
     constexpr const auto QUICK = "quick_values.json";
     constexpr const auto SKULL = "skull.json";
   }
