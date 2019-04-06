@@ -1,32 +1,43 @@
 #pragma once
 
 #include <string>
+#include <ostream>
+
+#include "constants.hpp"
 
 class SkullValue {
 private:
-  std::string type;
-  std::string amount;
-  std::string millis;
+  std::string mType;
+  std::string mAmount;
+  std::string mMillis;
 
 public:
-  template<typename A, typename B, typename C>
+  template <typename A, typename B, typename C>
   SkullValue(A && type,
              B && amount,
              C && millis)
-      : type{std::forward<A>(type)},
-        amount{std::forward<B>(amount)},
-        millis{std::forward<C>(millis)} {}
+      : mType{std::forward<A>(type)},
+        mAmount{std::forward<B>(amount)},
+        mMillis{std::forward<C>(millis)} {}
 
-  inline const std::string & getType() const {
-    return type;
+//  SkullValue(const SkullValue &) = delete;
+
+  inline const std::string & type() const {
+    return mType;
   }
 
-  inline const std::string & getAmount() const {
-    return amount;
+  inline const std::string & amount() const {
+    return mAmount;
   }
 
-  inline const std::string & getmillis() const {
-    return millis;
+  inline const std::string & millis() const {
+    return mMillis;
+  }
+
+  inline bool valid() const {
+    return mType != constant::query::UNDEFINED
+           && mAmount != constant::query::UNDEFINED
+           && mMillis != constant::query::UNDEFINED;
   }
 
 //  template <typename T>
@@ -54,14 +65,23 @@ public:
 //  }
 
   inline std::string json() const {
-    return R"({"type":")" + type + R"(","amount":)" + amount + R"(,"millis":)" + millis + "}";
+    return R"({"type":")" + mType + R"(","amount":)" + mAmount + R"(,"millis":)" + mMillis + "}";
   }
 
   inline bool operator==(const SkullValue & rhs) const {
-    return type == rhs.type && amount == rhs.amount && millis == rhs.millis;
+    return mType == rhs.mType && mAmount == rhs.mAmount && mMillis == rhs.mMillis;
   }
 
   inline bool operator!=(const SkullValue & rhs) const {
     return !(rhs == *this);
+  }
+
+  friend std::ostream & operator<<(std::ostream & stream,
+                                   const SkullValue & value) {
+    stream << R"({"type":")" << value.mType
+           << R"(","amount":)" << value.mAmount
+           << R"(,"millis":)" << value.mMillis
+           << '}';
+    return stream;
   }
 };

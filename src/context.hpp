@@ -2,7 +2,6 @@
 
 #include <optional>
 
-#include <boost/filesystem.hpp>
 #include <restinio/all.hpp>
 
 #include "user.hpp"
@@ -12,13 +11,8 @@ public:
   const std::uint16_t id;
   const restinio::request_handle_t request;
   const User user;
-  const std::optional<const boost::filesystem::path> root;
 
   Context(restinio::request_handle_t request);
-
-  inline bool authorized() const {
-    return root.has_value();
-  }
 };
 
 namespace fmt {

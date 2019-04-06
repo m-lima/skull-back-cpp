@@ -7,13 +7,15 @@ struct QuickValue {
   const std::string amount;
   const std::string icon;
 
-  template<typename A, typename B, typename C>
+  template <typename A, typename B, typename C>
   QuickValue(A && type,
              B && amount,
              C && icon)
       : type{std::forward<A>(type)},
         amount{std::forward<B>(amount)},
         icon{std::forward<C>(icon)} {}
+
+//  QuickValue(const QuickValue &) = delete;
 
 //  template <typename T>
 //  QuickValue(T && type,
@@ -24,7 +26,10 @@ struct QuickValue {
 //        icon{std::forward<T>(icon)} {}
 
   inline std::string json() const {
-    return R"({"type":")" + type + R"(","amount":)" + amount + R"(,"icon":")" + icon + "\"}";
+    return R"({"type":")" + type
+           + R"(","amount":)" + amount
+           + R"(,"icon":")" + icon
+           + "\"}";
   }
 
   inline bool operator==(const QuickValue & rhs) const {
@@ -33,5 +38,14 @@ struct QuickValue {
 
   inline bool operator!=(const QuickValue & rhs) const {
     return !(rhs == *this);
+  }
+
+  friend std::ostream & operator<<(std::ostream & stream,
+                                   const QuickValue & value) {
+    stream << R"({"type":")" << value.type
+           << R"(","amount":)" << value.amount
+           << R"(,"icon":)" << value.icon
+           << '}';
+    return stream;
   }
 };

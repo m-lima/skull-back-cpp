@@ -3,7 +3,6 @@
 #include <functional>
 #include <string>
 
-#include <boost/filesystem.hpp>
 #include <restinio/all.hpp>
 
 #include "context.hpp"

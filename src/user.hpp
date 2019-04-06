@@ -28,7 +28,7 @@ struct User {
   }
 };
 
-template<>
+template <>
 struct std::hash<User> {
   inline auto operator()(const User & user) const {
     return user.hash;

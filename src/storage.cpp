@@ -1,79 +1,89 @@
 #include "storage.hpp"
 
+#include <thread>
+
+#include <boost/filesystem.hpp>
+#include <spdlog/spdlog.h>
+
 #include "constants.hpp"
 
-std::optional<const std::vector<QuickValue>> Storage::getQuickValuePath(const User & user) const {
+namespace {
+  void save(const std::unordered_map<User, std::vector<SkullValue>>::const_iterator & skullValues,
+            std::unique_lock<std::mutex> &&) {
+
+    auto userPath = (boost::filesystem::path{constant::file::ROOT}
+                     / skullValues->first.name
+                     / constant::file::SKULL).generic_string();
+
+    std::ofstream file;
+    file.open(userPath);
+
+    if (!file.good()) {
+      spdlog::error("Failed to open {:s}", userPath);
+      return;
+    }
+
+    file << '[';
+    auto end = skullValues->second.cend() - 1;
+    for (auto it = skullValues->second.cbegin(); it != end; ++it) {
+      file << *it << ',';
+    }
+    file << *end << ']';
+
+    file.close();
+  }
+}
+
+const std::vector<QuickValue> * Storage::getQuickValues(const User & user) const {
   auto quickValues = mQuickValues.find(user);
+  if (quickValues == mQuickValues.end()) return nullptr;
 
-  if (quickValues == mQuickValues.end()) {
-    return {};
-  }
-
-  return std::make_optional(quickValues->second);
+  return &quickValues->second;
 }
 
-std::optional<const std::vector<SkullValue>> Storage::getSkullValue(const User & user) {
+const std::vector<SkullValue> * Storage::getSkullValues(const User & user) {
   auto skullValues = mSkullValues.find(user);
-
-  if (skullValues == mSkullValues.end()) {
-    return {};
-  }
+  if (skullValues == mSkullValues.end()) return nullptr;
 
   auto mutex = mMutexes.find(user);
+  if (mutex == mMutexes.end()) return nullptr;
 
-  if (mutex == mMutexes.end()) {
-    return {};
-  }
-
+  mutex->second.lock();
   std::lock_guard lock{mutex->second};
-  return std::make_optional(skullValues->second);
+  return &skullValues->second;
 }
 
-bool Storage::addSkullValue(const User & user, const SkullValue & skullValue) {
+bool Storage::addSkullValue(const User & user, SkullValue && skullValue) {
   auto skullValues = mSkullValues.find(user);
-
-  if (skullValues == mSkullValues.end()) {
-    return false;
-  }
+  if (skullValues == mSkullValues.end()) return false;
 
   auto mutex = mMutexes.find(user);
+  if (mutex == mMutexes.end()) return false;
 
-  if (mutex == mMutexes.end()) {
-    return false;
-  }
+  std::unique_lock lock{mutex->second};
+  skullValues->second.push_back(std::move(skullValue));
 
-  std::lock_guard lock{mutex->second};
-  skullValues->second.push_back(skullValue);
-  commitSkullChanges(user);
+  std::thread saver{save, skullValues, std::move(lock)};
+  saver.detach();
   return true;
 }
 
-bool Storage::deleteSkullValue(const User & user, const SkullValue & skullValue) {
+bool Storage::deleteSkullValue(const User & user,
+                               const SkullValue & skullValue) {
   auto skullValues = mSkullValues.find(user);
-
-  if (skullValues == mSkullValues.end()) {
-    return false;
-  }
+  if (skullValues == mSkullValues.end()) return false;
 
   auto mutex = mMutexes.find(user);
+  if (mutex == mMutexes.end()) return false;
 
-  if (mutex == mMutexes.end()) {
-    return false;
-  }
-
-  std::lock_guard lock{mutex->second};
+  std::unique_lock lock{mutex->second};
 
   auto entry = std::find(skullValues->second.begin(), skullValues->second.end(), skullValue);
-
-  if (entry == skullValues->second.end()) {
-    return false;
-  }
+  if (entry == skullValues->second.end()) return false;
 
   skullValues->second.erase(entry);
-  commitSkullChanges(user);
+  std::thread saver{save, skullValues, std::move(lock)};
+  saver.detach();
   return true;
 }
 
-void Storage::commitSkullChanges(const User & user) {
-
-}
