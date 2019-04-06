@@ -1,23 +1,25 @@
 #pragma once
 
 #include <restinio/all.hpp>
-#include <spdlog/spdlog.h>
 
 #include "constants.hpp"
-#include "context.hpp"
 
+template <typename T, typename C>
 class Response {
-  restinio::response_builder_t<restinio::restinio_controlled_output_t> response;
+  friend class Context;
+
+  restinio::response_builder_t<T> response;
+  const C callback;
+
+  Response(restinio::response_builder_t<T> && response, C && callback)
+      : response{std::move(response)},
+        callback{std::move(callback)} {}
+
+  Response(const Response &) = delete;
+  Response & operator=(const Response &) = delete;
 
 public:
-  Response(Context && context, restinio::http_status_line_t && status)
-      : response{context.request->create_response(status)} {
-    spdlog::log(status.status_code().raw_code() < 300 ? spdlog::level::info : spdlog::level::warn,
-                "{} {:d} {:s}",
-                context,
-                status.status_code().raw_code(),
-                status.reason_phrase());
-  }
+  Response(Response && response) : response{std::move(response.response)}, callback{std::move(response.callback)} {}
 
   inline Response && appendHeader(restinio::http_field_t field, std::string && value) && {
     response.append_header(field, std::move(value));
@@ -39,8 +41,28 @@ public:
     return std::move(*this);
   }
 
-  inline restinio::request_handling_status_t done() {
-    return response.done();
+  inline Response && appendChunk(restinio::writable_item_t chunk) && {
+    response.append_chunk(std::move(chunk));
+    return std::move(*this);
   }
 
+  inline Response && flush() && {
+    response.flush();
+    return std::move(*this);
+  }
+
+  inline Response & appendChunk(restinio::writable_item_t chunk) & {
+    response.append_chunk(std::move(chunk));
+    return *this;
+  }
+
+  inline Response & flush() & {
+    response.flush();
+    return *this;
+  }
+
+  inline restinio::request_handling_status_t done() {
+    callback(response.header().status_line());
+    return response.done();
+  }
 };

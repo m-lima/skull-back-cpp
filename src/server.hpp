@@ -11,10 +11,6 @@
 namespace server {
   using Handler = restinio::request_handling_status_t;
 
-  inline Handler fail(Context && context, restinio::http_status_line_t && status) noexcept {
-    return Response{std::move(context), std::move(status)}.connectionClose().done();
-  }
-
   void listen(std::string && host, std::uint16_t port, std::uint16_t threadCount) noexcept;
 
   Handler getQuick(Context &&) noexcept;

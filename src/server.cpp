@@ -13,26 +13,71 @@
 #include "storage.hpp"
 
 namespace {
-  Storage storage;
+  struct LogWrapper {
+    template <typename L>
+    void trace(L && log) {
+      spdlog::trace(log());
+    }
 
-  struct ServerTraits : public restinio::default_single_thread_traits_t {
-    using request_handler_t = restinio::router::express_router_t<>;
+    template <typename L>
+    void info(L & log) {
+      spdlog::info(log());
+    }
+
+    template <typename L>
+    void warn(L && log) {
+      spdlog::warn(log());
+    }
+
+    template <typename L>
+    void error(L && log) {
+      spdlog::error(log());
+    }
   };
 
+  Storage storage;
+
+//  struct ServerTraits : public restinio::default_single_thread_traits_t {
+//  };
+
+//  struct ServerTraits {
+//    using timer_manager_t = restinio::asio_timer_manager_t;
+//    using logger_t = restinio::null_logger_t;
+//    using request_handler_t = restinio::router::express_router_t<>;
+//    using strand_t = asio::strand<asio::executor>;
+//    using stream_socket_t = Socket;
+//  };
+
+  struct ServerMode {
+    using SingleThread = asio::strand<asio::executor>;
+    using MultiThread = asio::executor;
+  };
+
+  template <typename Strand>
+  using ServerTraits = restinio::traits_t<restinio::asio_timer_manager_t,
+      restinio::null_logger_t,
+//      LogWrapper,
+      restinio::router::express_router_t<>,
+      Strand>;
+
+  inline server::Handler fail(Context && context, restinio::http_status_line_t && status) noexcept {
+    return context.createResponse(std::move(status)).connectionClose().done();
+  }
+
   inline server::Handler forbidden(Context && context) noexcept {
-    return server::fail(std::move(context), restinio::status_forbidden());
+    return fail(std::move(context), restinio::status_forbidden());
   }
 
   inline server::Handler badRequest(Context && context) noexcept {
-    return server::fail(std::move(context), restinio::status_bad_request());
+    return fail(std::move(context), restinio::status_bad_request());
   }
 
   inline server::Handler internalServerError(Context && context) noexcept {
-    return server::fail(std::move(context), restinio::status_internal_server_error());
+    return fail(std::move(context), restinio::status_internal_server_error());
   }
 
   inline server::Handler notFound(Context && context) noexcept {
-    return server::fail(std::move(context), restinio::status_not_found());
+    return fail(std::move(context), restinio::status_not_found());
   }
 }
 
@@ -49,14 +94,14 @@ namespace server {
     if (threadCount < 2) {
       spdlog::info("Listening on {:s}:{:d} on a single thread..", host, port);
 
-      restinio::run(restinio::on_this_thread<ServerTraits>()
+      restinio::run(restinio::on_this_thread<ServerTraits<ServerMode::SingleThread>>()
                         .address(std::move(host))
                         .port(port)
                         .request_handler(std::move(router)));
     } else {
       spdlog::info("Listening on {:s}:{:d} on {:d} threads..", host, port, threadCount);
 
-      restinio::run(restinio::on_thread_pool<ServerTraits>(threadCount)
+      restinio::run(restinio::on_thread_pool<ServerTraits<ServerMode::MultiThread>>(threadCount)
                         .address(std::move(host))
                         .port(port)
                         .request_handler(std::move(router)));
@@ -71,7 +116,7 @@ namespace server {
 
       if (!values) return notFound(std::move(context));
 
-      return Response{std::move(context), restinio::status_ok()}
+      return context.createResponse(restinio::status_ok())
           .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
           .setBody(*values)
           .done();
@@ -89,7 +134,7 @@ namespace server {
 
       if (!values) return notFound(std::move(context));
 
-      return Response{std::move(context), restinio::status_ok()}
+      return context.createResponse(restinio::status_ok())
           .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
           .setBody(*values)
           .done();
@@ -126,7 +171,7 @@ namespace server {
         storage.addSkullValue(context.user, std::move(value));
       }
 
-      return Response{std::move(context), restinio::status_created()}.done();
+      return context.createResponse(restinio::status_created()).done();
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));
@@ -158,7 +203,7 @@ namespace server {
 
       storage.deleteSkullValue(context.user, value);
 
-      return Response{std::move(context), restinio::status_accepted()}.done();
+      return context.createResponse(restinio::status_accepted()).done();
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));

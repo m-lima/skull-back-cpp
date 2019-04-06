@@ -4,6 +4,7 @@
 
 #include <restinio/all.hpp>
 
+#include "response.hpp"
 #include "user.hpp"
 
 class Context {
@@ -13,6 +14,17 @@ public:
   const User user;
 
   Context(restinio::request_handle_t request);
+
+  template <typename T = restinio::restinio_controlled_output_t>
+  auto createResponse(restinio::http_status_line_t && status) {
+    return Response{request->create_response<T>(std::move(status)),
+                    [this](const restinio::http_status_line_t & status) {
+                      logDone(status);
+                    }};
+  }
+
+private:
+  void logDone(const restinio::http_status_line_t & status) const;
 };
 
 namespace fmt {
