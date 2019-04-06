@@ -43,21 +43,25 @@ public:
   }
 
   inline Response && appendChunk(restinio::writable_item_t chunk) && {
+    static_assert(std::is_same_v<T, restinio::chunked_output_t>);
     response.append_chunk(std::move(chunk));
     return std::move(*this);
   }
 
   inline Response && flush() && {
+    static_assert(std::is_same_v<T, restinio::chunked_output_t>);
     response.flush();
     return std::move(*this);
   }
 
   inline Response & appendChunk(restinio::writable_item_t chunk) & {
+    static_assert(std::is_same_v<T, restinio::chunked_output_t>);
     response.append_chunk(std::move(chunk));
     return *this;
   }
 
   inline Response & flush() & {
+    static_assert(std::is_same_v<T, restinio::chunked_output_t>);
     response.flush();
     return *this;
   }
