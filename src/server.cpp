@@ -106,7 +106,9 @@ namespace server {
                          query[constant::query::AMOUNT],
                          std::to_string(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count())};
 
-        if (!value.valid()) return badRequest(std::move(context));
+        if (value.type() == constant::query::UNDEFINED || value.amount() == constant::query::UNDEFINED) {
+          return badRequest(std::move(context));
+        }
 
         storage.addSkullValue(context.user, std::move(value));
       }
@@ -131,7 +133,11 @@ namespace server {
 
       SkullValue value{query[constant::query::TYPE], query[constant::query::AMOUNT], query[constant::query::MILLIS]};
 
-      if (!value.valid()) return badRequest(std::move(context));
+      if (value.type() == constant::query::UNDEFINED
+          || value.amount() == constant::query::UNDEFINED
+          || value.millis() == constant::query::UNDEFINED) {
+        return badRequest(std::move(context));
+      }
 
       storage.deleteSkullValue(context.user, value);
 

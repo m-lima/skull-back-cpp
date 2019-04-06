@@ -15,16 +15,6 @@ struct QuickValue {
         amount{std::forward<B>(amount)},
         icon{std::forward<C>(icon)} {}
 
-//  QuickValue(const QuickValue &) = delete;
-
-//  template <typename T>
-//  QuickValue(T && type,
-//             const double amount,
-//             T && icon)
-//      : type{std::forward<T>(type)},
-//        amount{std::to_string(amount)},
-//        icon{std::forward<T>(icon)} {}
-
   inline std::string json() const {
     return R"({"type":")" + type
            + R"(","amount":)" + amount

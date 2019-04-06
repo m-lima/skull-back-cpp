@@ -3,8 +3,6 @@
 #include <string>
 #include <ostream>
 
-#include "constants.hpp"
-
 class SkullValue {
 private:
   std::string mType;
@@ -20,8 +18,6 @@ public:
         mAmount{std::forward<B>(amount)},
         mMillis{std::forward<C>(millis)} {}
 
-//  SkullValue(const SkullValue &) = delete;
-
   inline const std::string & type() const {
     return mType;
   }
@@ -33,36 +29,6 @@ public:
   inline const std::string & millis() const {
     return mMillis;
   }
-
-  inline bool valid() const {
-    return mType != constant::query::UNDEFINED
-           && mAmount != constant::query::UNDEFINED
-           && mMillis != constant::query::UNDEFINED;
-  }
-
-//  template <typename T>
-//  SkullValue(T && type,
-//             const double amount,
-//             const long millis)
-//      : type{std::forward<T>(type)},
-//        amount{std::to_string(amount)},
-//        millis{std::to_string(millis)} {}
-
-//  SkullValue(const SkullValue & other) : type{other.type}, amount{other.amount}, millis{other.millis} {}
-//  SkullValue(SkullValue && other)
-//      : type{std::move(other.type)},
-//        amount{std::move(other.amount)},
-//        millis{std::move(other.millis)} {}
-//
-//  SkullValue & operator=(const SkullValue & other) {
-//    if (&other == this) {
-//      return *this;
-//    }
-//
-//    SkullValue fresh{other.type, other.amount, other.millis};
-//
-//    return fresh;
-//  }
 
   inline std::string json() const {
     return R"({"type":")" + mType + R"(","amount":)" + mAmount + R"(,"millis":)" + mMillis + "}";
