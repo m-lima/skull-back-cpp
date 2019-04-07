@@ -20,11 +20,12 @@ namespace {
     stream << *end << ']';
   }
 
-  void save(const std::unordered_map<User, std::vector<SkullValue>>::const_iterator & skullValues,
+  void save(const std::string & userName,
+            const std::unordered_map<User, std::vector<SkullValue>>::const_iterator && skullValues,
             std::unique_lock<std::mutex> &&) {
 
     const auto userPath = (boost::filesystem::path{constant::file::ROOT}
-                           / skullValues->first.name
+                           / userName
                            / constant::file::SKULL).generic_string();
 
     std::ofstream file;
@@ -37,11 +38,26 @@ namespace {
 
     convertToString(skullValues->second, file);
 
+    spdlog::info("Updated {:s}", userPath);
     file.close();
   }
 
+  template<typename T>
+  struct TypePath {};
+
+  template <>
+  struct TypePath<QuickValue> {
+    static constexpr const auto path = constant::file::QUICK;
+  };
+
+  template <>
+  struct TypePath<SkullValue> {
+    static constexpr const auto path = constant::file::SKULL;
+  };
+
   template <typename T>
   std::optional<std::smatch> parseValue(std::ifstream & file) {
+    static_assert(std::disjunction_v<std::is_same<T, QuickValue>, std::is_same<T, SkullValue>>);
     std::string buffer;
 
     std::getline(file, buffer, '{');
@@ -52,14 +68,13 @@ namespace {
     std::getline(file, buffer, '}');
 
     std::smatch match;
-    static_assert(std::disjunction_v<std::is_same<T, QuickValue>, std::is_same<T, SkullValue>>);
-    if constexpr (std::is_same<T, QuickValue>::value) {
+    if constexpr (std::is_same_v<T, QuickValue>) {
       static const std::regex quickValueRegex{R""("type":"(.+)","amount":([0-9]+),"icon":"(.+)")""};
       if (!std::regex_match(buffer, match, quickValueRegex)) {
         spdlog::error("Unmatched value entry {:s}", buffer);
         return {};
       }
-    } else if (std::is_same<T, SkullValue>::value) {
+    } else if (std::is_same_v<T, SkullValue>) {
       static const std::regex skullValueRegex{R""("type":"(.+)","amount":([0-9]+),"millis":([0-9]+))""};
       if (!std::regex_match(buffer, match, skullValueRegex)) {
         spdlog::error("Unmatched value entry {:s}", buffer);
@@ -76,7 +91,10 @@ namespace {
   }
 
   template <typename T>
-  std::vector<T> loadValues(const std::string & path) {
+  std::vector<T> load(const boost::filesystem::directory_iterator & it) {
+    static_assert(std::disjunction_v<std::is_same<T, QuickValue>, std::is_same<T, SkullValue>>);
+
+    const auto path = (it->path() / TypePath<T>::path).generic_string();
     std::ifstream file;
     file.open(path);
 
@@ -102,8 +120,8 @@ Storage::Storage() {
   for (auto it{boost::filesystem::directory_iterator{root}}; it != boost::filesystem::directory_iterator{}; ++it) {
     auto user = it->path().filename().generic_string();
     spdlog::info("Found user: {:s}", user);
-    mQuickValues.try_emplace(user, loadValues<QuickValue>((it->path() / constant::file::QUICK).generic_string()));
-    mSkullValues.try_emplace(user, loadValues<SkullValue>((it->path() / constant::file::SKULL).generic_string()));
+    mQuickValues.try_emplace(user, load<QuickValue>(it));
+    mSkullValues.try_emplace(user, load<SkullValue>(it));
     mMutexes.try_emplace(user);
   }
 }
@@ -141,7 +159,7 @@ bool Storage::addSkullValue(const User & user, SkullValue && skullValue) {
   std::unique_lock lock{mutex->second};
   skullValues->second.push_back(std::move(skullValue));
 
-  std::thread saver{save, skullValues, std::move(lock)};
+  std::thread saver{save, user.name, std::move(skullValues), std::move(lock)};
   saver.detach();
   return true;
 }
@@ -160,7 +178,7 @@ bool Storage::deleteSkullValue(const User & user,
   if (entry == skullValues->second.end()) return false;
 
   skullValues->second.erase(entry);
-  std::thread saver{save, skullValues, std::move(lock)};
+  std::thread saver{save, user.name, std::move(skullValues), std::move(lock)};
   saver.detach();
   return true;
 }
