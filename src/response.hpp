@@ -4,7 +4,7 @@
 
 #include "constants.hpp"
 
-template <typename T, typename C, std::size_t MAX_BUFFER = 1024>
+template <typename T, typename C>
 class Response {
   friend class Context;
 
@@ -75,7 +75,7 @@ public:
     response.response.append_chunk(value);
     response.bufferSize += value.size();
 
-    if (response.bufferSize > MAX_BUFFER) {
+    if (response.bufferSize > constant::server::MAX_BUFFER) {
       response.response.flush();
       response.bufferSize = 0;
     }

@@ -33,21 +33,28 @@ private:
 public:
   Storage();
 
-  inline bool authorized(const User & user) const {
-    return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.cend();
-  }
-
   std::string getQuickValues(const User & user) const;
   std::string getSkullValues(const User & user);
   bool addSkullValue(const User & user, SkullValue && skullValue);
   bool deleteSkullValue(const User & user, const SkullValue & skullValue);
 
+  inline bool authorized(const User & user) const {
+    return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.cend();
+  }
+
+  template <typename T>
+  inline std::size_t estimateSize(const User & user) const {
+    const auto values = (this->*TypeMap<T>::map).find(user);
+    if (values == (this->*TypeMap<T>::map).cend()) return 0;
+
+    return values->second.size() * 50;
+  }
+
   template <typename T, typename S>
   inline void streamValues(const User & user, S & stream) const {
     const auto values = (this->*TypeMap<T>::map).find(user);
-    if (values == (this->*TypeMap<T>::map).cend()) return;
 
-    if (values->second.empty()) {
+    if (values == (this->*TypeMap<T>::map).cend() || values->second.empty()) {
       stream << "[]";
       return;
     }

@@ -3,6 +3,10 @@
 #include "user.hpp"
 
 namespace constant {
+  namespace server {
+    constexpr const auto MAX_BUFFER = 1024;
+  }
+
   namespace path {
     constexpr const auto GET_QUICK = "/quick";
     constexpr const auto GET_SKULL = "/";

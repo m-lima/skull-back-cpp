@@ -15,6 +15,24 @@
 namespace {
   Storage storage;
 
+  template <typename T>
+  struct TypeGetter {
+  };
+
+  template <>
+  struct TypeGetter<QuickValue> {
+    static inline auto get(const User & user) {
+      return storage.getQuickValues(user);
+    }
+  };
+
+  template <>
+  struct TypeGetter<SkullValue> {
+    static inline auto get(const User & user) {
+      return storage.getSkullValues(user);
+    }
+  };
+
   struct ServerMode {
     using SingleThread = asio::strand<asio::executor>;
     using MultiThread = asio::executor;
@@ -44,6 +62,29 @@ namespace {
 
   inline server::Handler notFound(Context && context) noexcept {
     return fail(std::move(context), restinio::status_not_found());
+  }
+
+  template <typename T>
+  server::Handler getOrStream(Context && context) noexcept {
+    try {
+      if (!storage.authorized(context.user)) return forbidden(std::move(context));
+
+      if (storage.estimateSize<T>(context.user) < constant::server::MAX_BUFFER) {
+        return context.createResponse(restinio::status_ok())
+            .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
+            .setBody(TypeGetter<T>::get(context.user))
+            .done();
+      }
+
+      auto response = context.createResponse<restinio::chunked_output_t>(restinio::status_ok())
+          .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8");
+
+      storage.streamValues<T>(context.user, response);
+      return response.done();
+    } catch (const std::exception & e) {
+      spdlog::error("{} Exception: {:s}", context, e.what());
+      return internalServerError(std::move(context));
+    }
   }
 }
 
@@ -75,32 +116,11 @@ namespace server {
   }
 
   Handler getQuick(Context && context) noexcept {
-    try {
-      if (!storage.authorized(context.user)) return forbidden(std::move(context));
-
-      return context.createResponse(restinio::status_ok())
-          .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
-          .setBody(storage.getQuickValues(context.user))
-          .done();
-    } catch (const std::exception & e) {
-      spdlog::error("{} Exception: {:s}", context, e.what());
-      return internalServerError(std::move(context));
-    }
+    return getOrStream<QuickValue>(std::move(context));
   }
 
   Handler getSkull(Context && context) noexcept {
-    try {
-      if (!storage.authorized(context.user)) return forbidden(std::move(context));
-
-      auto response = context.createResponse<restinio::chunked_output_t>(restinio::status_ok())
-          .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8");
-
-      storage.streamValues<SkullValue>(context.user, response);
-      return response.done();
-    } catch (const std::exception & e) {
-      spdlog::error("{} Exception: {:s}", context, e.what());
-      return internalServerError(std::move(context));
-    }
+    return getOrStream<SkullValue>(std::move(context));
   }
 
   Handler postSkull(Context && context) noexcept {
