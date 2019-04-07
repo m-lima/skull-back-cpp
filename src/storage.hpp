@@ -16,11 +16,25 @@ private:
   std::unordered_map<User, std::vector<SkullValue>> mSkullValues;
   std::unordered_map<User, std::mutex> mMutexes;
 
+  template <typename T>
+  struct TypeMap {
+  };
+
+  template <>
+  struct TypeMap<QuickValue> {
+    static constexpr const auto Storage::* const map = &Storage::mQuickValues;
+  };
+
+  template <>
+  struct TypeMap<SkullValue> {
+    static constexpr const auto Storage::* const map = &Storage::mSkullValues;
+  };
+
 public:
   Storage();
 
   inline bool authorized(const User & user) const {
-    return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.end();
+    return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.cend();
   }
 
   std::string getQuickValues(const User & user) const;
@@ -28,10 +42,10 @@ public:
   bool addSkullValue(const User & user, SkullValue && skullValue);
   bool deleteSkullValue(const User & user, const SkullValue & skullValue);
 
-  template <typename S>
-  void streamSkullValues(const User & user, S & stream) const {
-    auto values = mSkullValues.find(user);
-    if (values == mSkullValues.end()) return;
+  template <typename T, typename S>
+  inline void streamValues(const User & user, S & stream) const {
+    const auto values = (this->*TypeMap<T>::map).find(user);
+    if (values == (this->*TypeMap<T>::map).cend()) return;
 
     if (values->second.empty()) {
       stream << "[]";

@@ -10,40 +10,9 @@
 #include "constants.hpp"
 
 namespace {
-  template <typename T, typename S>
-  void convertToString(const std::vector<T> & vector, S & stream) {
-    stream << '[';
-    auto end = vector.cend() - 1;
-    for (auto it = vector.cbegin(); it != end; ++it) {
-      stream << *it << ',';
-    }
-    stream << *end << ']';
-  }
-
-  void save(const std::string & userName,
-            const std::unordered_map<User, std::vector<SkullValue>>::const_iterator && skullValues,
-            std::unique_lock<std::mutex> &&) {
-
-    const auto userPath = (boost::filesystem::path{constant::file::ROOT}
-                           / userName
-                           / constant::file::SKULL).generic_string();
-
-    std::ofstream file;
-    file.open(userPath);
-
-    if (!file.good()) {
-      spdlog::error("Failed to open {:s} for saving", userPath);
-      return;
-    }
-
-    convertToString(skullValues->second, file);
-
-    spdlog::info("Updated {:s}", userPath);
-    file.close();
-  }
-
-  template<typename T>
-  struct TypePath {};
+  template <typename T>
+  struct TypePath {
+  };
 
   template <>
   struct TypePath<QuickValue> {
@@ -54,6 +23,39 @@ namespace {
   struct TypePath<SkullValue> {
     static constexpr const auto path = constant::file::SKULL;
   };
+
+  template <typename T, typename S>
+  inline void convertToString(const std::vector<T> & vector, S & stream) {
+    stream << '[';
+    auto end = vector.cend() - 1;
+    for (auto it = vector.cbegin(); it != end; ++it) {
+      stream << *it << ',';
+    }
+    stream << *end << ']';
+  }
+
+  template <typename T>
+  void save(const std::string & userName,
+            const typename std::unordered_map<User, std::vector<T>>::const_iterator && values,
+            std::unique_lock<std::mutex> &&) {
+
+    const auto userPath = (boost::filesystem::path{constant::file::ROOT}
+                           / userName
+                           / TypePath<T>::path).generic_string();
+
+    std::ofstream file;
+    file.open(userPath);
+
+    if (!file.good()) {
+      spdlog::error("Failed to open {:s} for saving", userPath);
+      return;
+    }
+
+    convertToString(values->second, file);
+
+    spdlog::info("Updated {:s}", userPath);
+    file.close();
+  }
 
   template <typename T>
   std::optional<std::smatch> parseValue(std::ifstream & file) {
@@ -159,7 +161,7 @@ bool Storage::addSkullValue(const User & user, SkullValue && skullValue) {
   std::unique_lock lock{mutex->second};
   skullValues->second.push_back(std::move(skullValue));
 
-  std::thread saver{save, user.name, std::move(skullValues), std::move(lock)};
+  std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
   saver.detach();
   return true;
 }
@@ -178,7 +180,7 @@ bool Storage::deleteSkullValue(const User & user,
   if (entry == skullValues->second.end()) return false;
 
   skullValues->second.erase(entry);
-  std::thread saver{save, user.name, std::move(skullValues), std::move(lock)};
+  std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
   saver.detach();
   return true;
 }
