@@ -11,21 +11,36 @@
 
 namespace {
   template <typename T>
-  struct TypePath {
+  struct TypeProps {
   };
 
   template <>
-  struct TypePath<QuickValue> {
-    static constexpr const auto path = constant::file::QUICK;
+  struct TypeProps<QuickValue> {
+    static constexpr const auto & path = constant::file::QUICK;
+
+    static const auto & regex() {
+      static const std::regex regex{R""("type":"(.+)","amount":([0-9]+),"icon":"(.+)")""};
+      return regex;
+    }
   };
 
   template <>
-  struct TypePath<SkullValue> {
-    static constexpr const auto path = constant::file::SKULL;
+  struct TypeProps<SkullValue> {
+    static constexpr const auto & path = constant::file::SKULL;
+
+    static const auto & regex() {
+      static const std::regex regex{R""("type":"(.+)","amount":([0-9]+),"millis":([0-9]+))""};
+      return regex;
+    }
   };
 
   template <typename T, typename S>
   inline void convertToString(const std::vector<T> & vector, S & stream) {
+    if (vector.empty()) {
+      stream << "[]";
+      return;
+    }
+
     stream << '[';
     auto end = vector.cend() - 1;
     for (auto it = vector.cbegin(); it != end; ++it) {
@@ -41,7 +56,7 @@ namespace {
 
     const auto userPath = (boost::filesystem::path{constant::file::ROOT}
                            / userName
-                           / TypePath<T>::path).generic_string();
+                           / TypeProps<T>::path).generic_string();
 
     std::ofstream file;
     file.open(userPath);
@@ -70,18 +85,9 @@ namespace {
     std::getline(file, buffer, '}');
 
     std::smatch match;
-    if constexpr (std::is_same_v<T, QuickValue>) {
-      static const std::regex quickValueRegex{R""("type":"(.+)","amount":([0-9]+),"icon":"(.+)")""};
-      if (!std::regex_match(buffer, match, quickValueRegex)) {
-        spdlog::error("Unmatched value entry {:s}", buffer);
-        return {};
-      }
-    } else if (std::is_same_v<T, SkullValue>) {
-      static const std::regex skullValueRegex{R""("type":"(.+)","amount":([0-9]+),"millis":([0-9]+))""};
-      if (!std::regex_match(buffer, match, skullValueRegex)) {
-        spdlog::error("Unmatched value entry {:s}", buffer);
-        return {};
-      }
+    if (!std::regex_match(buffer, match, TypeProps<T>::regex())) {
+      spdlog::error("Unmatched value entry {:s}", buffer);
+      return {};
     }
 
     if (match.size() != 4) {
@@ -96,7 +102,7 @@ namespace {
   std::vector<T> load(const boost::filesystem::directory_iterator & it) {
     static_assert(std::disjunction_v<std::is_same<T, QuickValue>, std::is_same<T, SkullValue>>);
 
-    const auto path = (it->path() / TypePath<T>::path).generic_string();
+    const auto path = (it->path() / TypeProps<T>::path).generic_string();
     std::ifstream file;
     file.open(path);
 
@@ -130,8 +136,8 @@ Storage::Storage() {
 
 template <>
 std::string Storage::get<QuickValue>(const User & user) {
-  auto quickValues = mQuickValues.find(user);
-  if (quickValues == mQuickValues.end()) return "[]";
+  const auto quickValues = mQuickValues.find(user);
+  if (quickValues == mQuickValues.cend()) return "[]";
 
   std::stringstream stream;
   convertToString(quickValues->second, stream);
@@ -140,8 +146,8 @@ std::string Storage::get<QuickValue>(const User & user) {
 
 template <>
 std::string Storage::get<SkullValue>(const User & user) {
-  auto skullValues = mSkullValues.find(user);
-  if (skullValues == mSkullValues.end()) return "[]";
+  const auto skullValues = mSkullValues.find(user);
+  if (skullValues == mSkullValues.cend()) return "[]";
 
   auto mutex = mMutexes.find(user);
   if (mutex == mMutexes.end()) return "[]";
