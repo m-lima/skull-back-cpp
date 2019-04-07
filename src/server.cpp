@@ -61,7 +61,7 @@ namespace {
       auto response = context.createResponse<restinio::chunked_output_t>(restinio::status_ok())
           .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8");
 
-      storage.streamValues<T>(context.user, response);
+      storage.stream<T>(context.user, response);
       return response.done();
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());

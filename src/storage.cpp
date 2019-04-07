@@ -130,66 +130,65 @@ Storage::Storage() {
     spdlog::info("Found user: {:s}", user);
     mQuickValues.try_emplace(user, load<QuickValue>(it));
     mSkullValues.try_emplace(user, load<SkullValue>(it));
-    mMutexes.try_emplace(user);
   }
 }
 
-template <>
-std::string Storage::get<QuickValue>(const User & user) {
-  const auto quickValues = mQuickValues.find(user);
-  if (quickValues == mQuickValues.cend()) return "[]";
-
-  std::stringstream stream;
-  convertToString(quickValues->second, stream);
-  return {stream.str()};
-}
-
-template <>
-std::string Storage::get<SkullValue>(const User & user) {
-  const auto skullValues = mSkullValues.find(user);
-  if (skullValues == mSkullValues.cend()) return "[]";
-
-  auto mutex = mMutexes.find(user);
-  if (mutex == mMutexes.end()) return "[]";
-
-  std::lock_guard lock{mutex->second};
-
-  std::stringstream stream;
-  convertToString(skullValues->second, stream);
-  return {stream.str()};
-}
-
-template <>
-bool Storage::add<SkullValue>(const User & user, SkullValue && value) {
-  auto skullValues = mSkullValues.find(user);
-  if (skullValues == mSkullValues.end()) return false;
-
-  auto mutex = mMutexes.find(user);
-  if (mutex == mMutexes.end()) return false;
-
-  std::unique_lock lock{mutex->second};
-  skullValues->second.push_back(std::move(value));
-
-  std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
-  saver.detach();
-  return true;
-}
-
-template <>
-bool Storage::remove<SkullValue>(const User & user, SkullValue && value) {
-  auto skullValues = mSkullValues.find(user);
-  if (skullValues == mSkullValues.end()) return false;
-
-  auto mutex = mMutexes.find(user);
-  if (mutex == mMutexes.end()) return false;
-
-  std::unique_lock lock{mutex->second};
-
-  auto entry = std::find(skullValues->second.begin(), skullValues->second.end(), value);
-  if (entry == skullValues->second.end()) return false;
-
-  skullValues->second.erase(entry);
-  std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
-  saver.detach();
-  return true;
-}
+//template <>
+//std::string Storage::get<QuickValue>(const User & user) {
+//  const auto quickValues = mQuickValues.find(user);
+//  if (quickValues == mQuickValues.cend()) return "[]";
+//
+//  std::stringstream stream;
+//  convertToString(quickValues->second, stream);
+//  return {stream.str()};
+//}
+//
+//template <>
+//std::string Storage::get<SkullValue>(const User & user) {
+//  const auto skullValues = mSkullValues.find(user);
+//  if (skullValues == mSkullValues.cend()) return "[]";
+//
+//  auto mutex = mMutexes.find(user);
+//  if (mutex == mMutexes.end()) return "[]";
+//
+//  std::lock_guard lock{mutex->second};
+//
+//  std::stringstream stream;
+//  convertToString(skullValues->second, stream);
+//  return {stream.str()};
+//}
+//
+//template <>
+//bool Storage::add<SkullValue>(const User & user, SkullValue && value) {
+//  auto skullValues = mSkullValues.find(user);
+//  if (skullValues == mSkullValues.end()) return false;
+//
+//  auto mutex = mMutexes.find(user);
+//  if (mutex == mMutexes.end()) return false;
+//
+//  std::unique_lock lock{mutex->second};
+//  skullValues->second.push_back(std::move(value));
+//
+//  std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
+//  saver.detach();
+//  return true;
+//}
+//
+//template <>
+//bool Storage::remove<SkullValue>(const User & user, SkullValue && value) {
+//  auto skullValues = mSkullValues.find(user);
+//  if (skullValues == mSkullValues.end()) return false;
+//
+//  auto mutex = mMutexes.find(user);
+//  if (mutex == mMutexes.end()) return false;
+//
+//  std::unique_lock lock{mutex->second};
+//
+//  auto entry = std::find(skullValues->second.begin(), skullValues->second.end(), value);
+//  if (entry == skullValues->second.end()) return false;
+//
+//  values->second->second.erase(entry);
+//  std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
+//  saver.detach();
+//  return true;
+//}

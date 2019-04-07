@@ -71,6 +71,19 @@ public:
     return response.done();
   }
 
+  friend inline Response & operator<<(Response<T, C> & response, const char value) {
+    // TODO avoid this string creation
+    response.response.append_chunk(std::string{value});
+    response.bufferSize++;
+
+    if (response.bufferSize > constant::server::MAX_BUFFER) {
+      response.response.flush();
+      response.bufferSize = 0;
+    }
+
+    return response;
+  }
+
   friend inline Response & operator<<(Response<T, C> & response, const std::string & value) {
     response.response.append_chunk(value);
     response.bufferSize += value.size();
