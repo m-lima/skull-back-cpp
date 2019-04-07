@@ -128,7 +128,8 @@ Storage::Storage() {
   }
 }
 
-std::string Storage::getQuickValues(const User & user) const {
+template <>
+std::string Storage::get<QuickValue>(const User & user) {
   auto quickValues = mQuickValues.find(user);
   if (quickValues == mQuickValues.end()) return "[]";
 
@@ -137,7 +138,8 @@ std::string Storage::getQuickValues(const User & user) const {
   return {stream.str()};
 }
 
-std::string Storage::getSkullValues(const User & user) {
+template <>
+std::string Storage::get<SkullValue>(const User & user) {
   auto skullValues = mSkullValues.find(user);
   if (skullValues == mSkullValues.end()) return "[]";
 
@@ -151,7 +153,8 @@ std::string Storage::getSkullValues(const User & user) {
   return {stream.str()};
 }
 
-bool Storage::addSkullValue(const User & user, SkullValue && skullValue) {
+template <>
+bool Storage::add<SkullValue>(const User & user, SkullValue && value) {
   auto skullValues = mSkullValues.find(user);
   if (skullValues == mSkullValues.end()) return false;
 
@@ -159,15 +162,15 @@ bool Storage::addSkullValue(const User & user, SkullValue && skullValue) {
   if (mutex == mMutexes.end()) return false;
 
   std::unique_lock lock{mutex->second};
-  skullValues->second.push_back(std::move(skullValue));
+  skullValues->second.push_back(std::move(value));
 
   std::thread saver{save<SkullValue>, user.name, std::move(skullValues), std::move(lock)};
   saver.detach();
   return true;
 }
 
-bool Storage::deleteSkullValue(const User & user,
-                               const SkullValue & skullValue) {
+template <>
+bool Storage::remove<SkullValue>(const User & user, SkullValue && value) {
   auto skullValues = mSkullValues.find(user);
   if (skullValues == mSkullValues.end()) return false;
 
@@ -176,7 +179,7 @@ bool Storage::deleteSkullValue(const User & user,
 
   std::unique_lock lock{mutex->second};
 
-  auto entry = std::find(skullValues->second.begin(), skullValues->second.end(), skullValue);
+  auto entry = std::find(skullValues->second.begin(), skullValues->second.end(), value);
   if (entry == skullValues->second.end()) return false;
 
   skullValues->second.erase(entry);

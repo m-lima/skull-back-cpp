@@ -33,10 +33,12 @@ private:
 public:
   Storage();
 
-  std::string getQuickValues(const User & user) const;
-  std::string getSkullValues(const User & user);
-  bool addSkullValue(const User & user, SkullValue && skullValue);
-  bool deleteSkullValue(const User & user, const SkullValue & skullValue);
+  template <typename T>
+  std::string get(const User & user);
+  template <typename T>
+  bool add(const User & user, T && value);
+  template <typename T>
+  bool remove(const User & user, T && value);
 
   inline bool authorized(const User & user) const {
     return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.cend();

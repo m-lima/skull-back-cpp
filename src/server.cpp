@@ -15,24 +15,6 @@
 namespace {
   Storage storage;
 
-  template <typename T>
-  struct TypeGetter {
-  };
-
-  template <>
-  struct TypeGetter<QuickValue> {
-    static inline auto get(const User & user) {
-      return storage.getQuickValues(user);
-    }
-  };
-
-  template <>
-  struct TypeGetter<SkullValue> {
-    static inline auto get(const User & user) {
-      return storage.getSkullValues(user);
-    }
-  };
-
   struct ServerMode {
     using SingleThread = asio::strand<asio::executor>;
     using MultiThread = asio::executor;
@@ -72,7 +54,7 @@ namespace {
       if (storage.estimateSize<T>(context.user) < constant::server::MAX_BUFFER) {
         return context.createResponse(restinio::status_ok())
             .appendHeader(restinio::http_field::content_type, "text/json; charset=utf-8")
-            .setBody(TypeGetter<T>::get(context.user))
+            .setBody(storage.get<T>(context.user))
             .done();
       }
 
@@ -147,7 +129,7 @@ namespace server {
           return badRequest(std::move(context));
         }
 
-        storage.addSkullValue(context.user, std::move(value));
+        storage.add<SkullValue>(context.user, std::move(value));
       }
 
       return context.createResponse(restinio::status_created()).done();
@@ -180,7 +162,7 @@ namespace server {
         return badRequest(std::move(context));
       }
 
-      storage.deleteSkullValue(context.user, value);
+      storage.remove<SkullValue>(context.user, std::move(value));
 
       return context.createResponse(restinio::status_accepted()).done();
     } catch (const std::exception & e) {
