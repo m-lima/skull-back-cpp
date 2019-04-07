@@ -1,9 +1,6 @@
 #include "context.hpp"
 
-#include <restinio/all.hpp>
 #include <spdlog/spdlog.h>
-
-#include "constants.hpp"
 
 namespace {
   std::atomic<std::uint16_t> COUNTER;

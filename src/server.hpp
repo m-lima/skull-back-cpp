@@ -1,12 +1,8 @@
 #pragma once
 
-#include <functional>
-#include <string>
-
 #include <restinio/all.hpp>
 
 #include "context.hpp"
-#include "response.hpp"
 
 namespace server {
   using Handler = restinio::request_handling_status_t;

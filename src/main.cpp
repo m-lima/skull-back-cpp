@@ -1,6 +1,6 @@
-#include "server.hpp"
-
 #include <mfl/args.hpp>
+
+#include "server.hpp"
 
 int main(int argc, char * argv[]) {
   auto aHost = mfl::args::extractOption(argc, argv, "-h");

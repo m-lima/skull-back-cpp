@@ -1,7 +1,5 @@
 #pragma once
 
-#include <restinio/all.hpp>
-
 #include "constants.hpp"
 
 template <typename T, typename C>

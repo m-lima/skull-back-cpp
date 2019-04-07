@@ -1,15 +1,13 @@
 #pragma once
 
-#include <mutex>
-#include <sstream>
+#include <fstream>
+#include <thread>
 #include <unordered_map>
-#include <vector>
 
 #include "constants.hpp"
+#include "file_handle.hpp"
 #include "quick_value.hpp"
-#include "response.hpp"
 #include "skull_value.hpp"
-#include "user.hpp"
 
 class Storage {
 private:
@@ -19,8 +17,8 @@ private:
     std::vector<T> vector;
 
     LockedVector(std::vector<T> && vector) : vector{std::move(vector)} {}
-    LockedVector(const std::vector<T> &) = delete;
 
+    LockedVector(const std::vector<T> &) = delete;
     LockedVector(LockedVector && vector) = default;
     LockedVector(const LockedVector &) = delete;
     LockedVector & operator=(const LockedVector &) = delete;
@@ -30,21 +28,23 @@ private:
   std::unordered_map<User, LockedVector<SkullValue>> mSkullValues;
 
   template <typename T>
-  struct TypeMap {
+  struct TypeProps {
   };
 
   template <>
-  struct TypeMap<QuickValue> {
+  struct TypeProps<QuickValue> {
+    static constexpr const auto & path = constant::file::QUICK;
     static constexpr auto Storage::* const map = &Storage::mQuickValues;
   };
 
   template <>
-  struct TypeMap<SkullValue> {
+  struct TypeProps<SkullValue> {
+    static constexpr const auto & path = constant::file::SKULL;
     static constexpr auto Storage::* const map = &Storage::mSkullValues;
   };
 
   template <typename T, typename S>
-  void stream(const std::vector<T> & vector, S & stream) const {
+  static void stream(const std::vector<T> & vector, S & stream) {
     stream << '[';
     auto end = vector.cend() - 1;
     for (auto it = vector.cbegin(); it != end; ++it) {
@@ -54,7 +54,30 @@ private:
   }
 
   template <typename T>
-  void save(const User &, LockedVector<T> &&) const {
+  static std::optional<T> parseValue(std::ifstream & file);
+
+  template <typename T>
+  static void save(const User & user,
+                   std::unique_ptr<const std::vector<T>> && vector,
+                   std::unique_lock<std::mutex> &&) {
+    FileHandle<std::ofstream> handle(user, TypeProps<T>::path);
+    if (!handle.good()) return;
+    stream(*vector, handle.file);
+  }
+
+  template <typename T>
+  static std::vector<T> load(const User & user) {
+    FileHandle<std::ifstream> handle(user, TypeProps<T>::path);
+    if (!handle.good()) return {};
+
+    std::vector<T> output;
+    while (true) {
+      auto value = parseValue<T>(handle.file);
+      if (!value) break;
+      output.emplace_back(std::move(*value));
+    }
+
+    return output;
   }
 
 public:
@@ -66,8 +89,8 @@ public:
 
   template <typename T>
   std::string get(const User & user) {
-    const auto values = (this->*TypeMap<T>::map).find(user);
-    if (values == (this->*TypeMap<T>::map).cend()) return "[]";
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend()) return "[]";
     if (values->second.vector.empty()) return "[]";
 
     std::lock_guard lock{values->second.mutex};
@@ -79,8 +102,8 @@ public:
 
   template <typename T, typename S>
   void stream(const User & user, S & output) {
-    const auto values = (this->*TypeMap<T>::map).find(user);
-    if (values == (this->*TypeMap<T>::map).cend() || values->second.vector.empty()) {
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend() || values->second.vector.empty()) {
       output << "[]";
       return;
     }
@@ -92,21 +115,21 @@ public:
 
   template <typename T>
   bool add(const User & user, T && value) {
-    const auto values = (this->*TypeMap<T>::map).find(user);
-    if (values == (this->*TypeMap<T>::map).cend()) return false;
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend()) return false;
 
     std::unique_lock lock{values->second.mutex};
     values->second.vector.push_back(std::forward<T>(value));
 
-//    std::thread saver{&save, user.name, std::move(values->second)};
-//    saver.detach();
+    std::thread saver{save<T>, user, std::make_unique<const std::vector<T>>(values->second.vector), std::move(lock)};
+    saver.detach();
     return true;
   }
 
   template <typename T>
   bool remove(const User & user, T && value) {
-    const auto values = (this->*TypeMap<T>::map).find(user);
-    if (values == (this->*TypeMap<T>::map).cend()) return false;
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend()) return false;
 
     std::unique_lock lock{values->second.mutex};
 
@@ -114,15 +137,15 @@ public:
     if (entry == values->second.vector.end()) return false;
     values->second.vector.erase(entry);
 
-//    std::thread saver{&save, user.name, std::move(values->second)};
-//    saver.detach();
+    std::thread saver{save<T>, user, std::make_unique<const std::vector<T>>(values->second.vector), std::move(lock)};
+    saver.detach();
     return true;
   }
 
   template <typename T>
   inline std::size_t estimateSize(const User & user) const {
-    const auto values = (this->*TypeMap<T>::map).find(user);
-    if (values == (this->*TypeMap<T>::map).cend()) return 0;
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend()) return 0;
 
     return values->second.vector.size() * 50;
   }

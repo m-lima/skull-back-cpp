@@ -1,11 +1,8 @@
 #pragma once
 
-#include <optional>
-
 #include <restinio/all.hpp>
 
 #include "response.hpp"
-#include "user.hpp"
 
 class Context {
 public:

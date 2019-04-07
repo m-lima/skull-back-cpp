@@ -1,15 +1,7 @@
 #include "server.hpp"
 
-#include <fstream>
-#include <memory>
-
-#include <restinio/all.hpp>
-#include <restinio/transforms/zlib.hpp>
 #include <spdlog/spdlog.h>
 
-#include "constants.hpp"
-#include "context.hpp"
-#include "response.hpp"
 #include "storage.hpp"
 
 namespace {
