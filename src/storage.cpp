@@ -78,7 +78,7 @@ namespace {
     std::string buffer;
 
     std::getline(file, buffer, '{');
-    if (buffer.empty() || buffer[0] == ']') {
+    if (buffer.empty() || *(buffer.cend() - 1) == ']') {
       return {};
     }
 
