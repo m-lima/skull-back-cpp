@@ -4,4 +4,4 @@
 [ ]. CMake envsubst
 [ ]! Reject amount = 0
 [ ]  Backup daily
-[ ]! Lock down other methods by same user when one method is taking place
+[x]! Lock down other methods by same user when one method is taking place

@@ -10,7 +10,9 @@ namespace server {
   void listen(std::string && host, std::uint16_t port, std::uint16_t threadCount) noexcept;
 
   Handler getQuick(Context &&) noexcept;
-  Handler postSkull(Context &&) noexcept;
+  Handler postQuick(Context &&) noexcept;
+  Handler deleteQuick(Context &&) noexcept;
   Handler getSkull(Context &&) noexcept;
+  Handler postSkull(Context &&) noexcept;
   Handler deleteSkull(Context &&) noexcept;
 }

@@ -8,10 +8,8 @@ namespace constant {
   }
 
   namespace path {
-    constexpr const auto GET_QUICK = "/quick";
-    constexpr const auto GET_SKULL = "/";
-    constexpr const auto POST_SKULL = "/";
-    constexpr const auto DELETE_SKULL = "/";
+    constexpr const auto QUICK = "/quick";
+    constexpr const auto SKULL = "/skull";
   }
 
   namespace file {

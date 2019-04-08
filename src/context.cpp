@@ -14,6 +14,17 @@ namespace {
       default: return "UNKNOWN";
     }
   }
+
+  spdlog::level::level_enum levelForStatus(const restinio::http_status_line_t & status) {
+    switch (status.status_code().raw_code() / 100) {
+      case 1:
+      case 2:
+      case 3:return spdlog::level::info;
+      case 4:return spdlog::level::warn;
+      case 5:
+      default:return spdlog::level::err;
+    }
+  }
 }
 
 Context::Context(restinio::request_handle_t request)
@@ -29,10 +40,9 @@ Context::Context(restinio::request_handle_t request)
 }
 
 void Context::logDone(const restinio::http_status_line_t & status) const {
-  spdlog::log(status.status_code().raw_code() < 300 ? spdlog::level::info : spdlog::level::warn,
+  spdlog::log(levelForStatus(status),
               "{} {:d} {:s}",
               *this,
               status.status_code().raw_code(),
               status.reason_phrase());
 }
-
