@@ -9,7 +9,7 @@ namespace constant {
 
   namespace path {
     constexpr const auto QUICK = "/quick";
-    constexpr const auto SKULL = "/skull";
+    constexpr const auto SKULL = "/";
   }
 
   namespace file {
