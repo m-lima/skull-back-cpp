@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <mutex>
 #include <thread>
 #include <unordered_map>
 
@@ -29,18 +30,6 @@ private:
 
   template <typename T>
   struct TypeProps {
-  };
-
-  template <>
-  struct TypeProps<QuickValue> {
-    static constexpr const auto & path = constant::file::QUICK;
-    static constexpr auto Storage::* const map = &Storage::mQuickValues;
-  };
-
-  template <>
-  struct TypeProps<SkullValue> {
-    static constexpr const auto & path = constant::file::SKULL;
-    static constexpr auto Storage::* const map = &Storage::mSkullValues;
   };
 
   template <typename T, typename S>
@@ -151,5 +140,14 @@ public:
   }
 };
 
+template <>
+struct Storage::TypeProps<QuickValue> {
+  static constexpr const auto & path = constant::file::QUICK;
+  static constexpr auto Storage::* const map = &Storage::mQuickValues;
+};
 
-
+template <>
+struct Storage::TypeProps<SkullValue> {
+  static constexpr const auto & path = constant::file::SKULL;
+  static constexpr auto Storage::* const map = &Storage::mSkullValues;
+};

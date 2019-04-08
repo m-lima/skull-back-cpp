@@ -8,7 +8,7 @@ project(skull CXX)
 include("${CMAKE_SOURCE_DIR}/Init.cmake")
 
 # Force the use of std::string_view (instead of experimental)
-add_compile_definitions(ASIO_HAS_STD_STRING_VIEW)
+list(APPEND DEFINITIONS "-DASIO_HAS_STD_STRING_VIEW")
 
 ##------------------------------------------------------------------------------
 ## Dependencies
