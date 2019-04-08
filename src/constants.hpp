@@ -13,7 +13,7 @@ namespace constant {
   }
 
   namespace file {
-    constexpr const auto ROOT = "data";
+    constexpr const auto ROOT = "/data";
     constexpr const auto QUICK = "quick_values.json";
     constexpr const auto SKULL = "skull.json";
   }
@@ -34,4 +34,3 @@ namespace constant {
     constexpr const auto ICON = "icon";
   }
 }
-
