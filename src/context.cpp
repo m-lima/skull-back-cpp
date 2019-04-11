@@ -39,7 +39,17 @@ Context::Context(restinio::request_handle_t request)
                request->header().request_target());
 }
 
-void Context::logDone(const restinio::http_status_line_t & status) const {
+template <>
+void Context::logDone<true>(const restinio::http_status_line_t & status) const {
+  spdlog::log(levelForStatus(status),
+              "{} (stream) {:d} {:s}",
+              *this,
+              status.status_code().raw_code(),
+              status.reason_phrase());
+}
+
+template <>
+void Context::logDone<false>(const restinio::http_status_line_t & status) const {
   spdlog::log(levelForStatus(status),
               "{} {:d} {:s}",
               *this,

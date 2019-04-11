@@ -16,11 +16,12 @@ public:
   auto createResponse(restinio::http_status_line_t && status) {
     return Response{request->create_response<T>(std::move(status)),
                     [this](const restinio::http_status_line_t & status) {
-                      logDone(status);
+                      logDone<std::is_same_v<T, restinio::chunked_output_t>>(status);
                     }};
   }
 
 private:
+  template <bool streamed>
   void logDone(const restinio::http_status_line_t & status) const;
 };
 
