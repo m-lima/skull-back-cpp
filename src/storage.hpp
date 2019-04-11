@@ -125,7 +125,7 @@ public:
     const auto values = (this->*TypeProps<T>::map).find(user);
     if (values == (this->*TypeProps<T>::map).cend()) return 0;
 
-    return values->second.vector.size() * 25;
+    return values->second.vector.size() * 50;
   }
 };
 
