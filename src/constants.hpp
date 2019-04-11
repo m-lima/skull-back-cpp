@@ -4,7 +4,7 @@
 
 namespace constant {
   namespace server {
-    constexpr const auto MAX_BUFFER = 1024;
+    constexpr const auto MAX_BUFFER = 64 * 1024;
   }
 
   namespace path {
@@ -14,8 +14,8 @@ namespace constant {
 
   namespace file {
     constexpr const auto ROOT = "/data";
-    constexpr const auto QUICK = "quick_values.json";
-    constexpr const auto SKULL = "skull.json";
+    constexpr const auto QUICK = "quick";
+    constexpr const auto SKULL = "skull";
   }
 
   namespace header {

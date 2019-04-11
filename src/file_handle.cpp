@@ -41,6 +41,8 @@ void UserIterator::forEach(std::function<void(const User &)> executor) {
   auto root = boost::filesystem::path{constant::file::ROOT};
 
   for (auto it{boost::filesystem::directory_iterator{root}}; it != boost::filesystem::directory_iterator{}; ++it) {
-    executor({it->path().filename().generic_string()});
+    auto user = it->path().filename().generic_string();
+    spdlog::info("Found user: {:s}", user);
+    executor({std::move(user)});
   }
 }

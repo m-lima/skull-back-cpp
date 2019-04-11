@@ -9,6 +9,13 @@ private:
   std::string mIcon;
 
 public:
+  static constexpr const auto size = 3;
+
+  QuickValue(const QuickValue &) = delete;
+  QuickValue(QuickValue &&) = default;
+  QuickValue & operator=(const QuickValue &) = delete;
+  QuickValue & operator=(QuickValue &&) = default;
+
   template <typename A, typename B, typename C>
   QuickValue(A && type,
              B && amount,
@@ -16,13 +23,6 @@ public:
       : mType{std::forward<A>(type)},
         mAmount{std::forward<B>(amount)},
         mIcon{std::forward<C>(icon)} {}
-
-  inline std::string json() const {
-    return R"({"type":")" + mType
-           + R"(","amount":)" + mAmount
-           + R"(,"icon":")" + mIcon
-           + "\"}";
-  }
 
   inline const std::string & type() const {
     return mType;
@@ -44,12 +44,18 @@ public:
     return !(rhs == *this);
   }
 
-  friend std::ostream & operator<<(std::ostream & stream,
-                                   const QuickValue & value) {
-    stream << R"({"type":")" << value.mType
-           << R"(","amount":)" << value.mAmount
-           << R"(,"icon":)" << value.mIcon
-           << '}';
+  template <typename T>
+  inline T & json(T & stream) const {
+    stream << R"({"type":")" << mType
+           << R"(","amount":)" << mAmount
+           << R"(,"icon":")" << mIcon
+           << "\"}";
+    return stream;
+  }
+
+  template <typename T>
+  inline T & tsv(T & stream) const {
+    stream << mType << '\t' << mAmount << '\t' << mIcon;
     return stream;
   }
 };

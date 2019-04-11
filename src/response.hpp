@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sstream>
+
 #include "constants.hpp"
 
 template <typename T, typename C>
@@ -8,7 +10,7 @@ class Response {
 
   restinio::response_builder_t<T> response;
   const C callback;
-  std::size_t bufferSize;
+  std::stringstream buffer;
 
   Response(restinio::response_builder_t<T> && response, C && callback)
       : response{std::move(response)},
@@ -65,30 +67,24 @@ public:
   }
 
   inline restinio::request_handling_status_t done() {
+    if constexpr (std::is_same_v<T, restinio::chunked_output_t>) {
+      if (buffer.tellp() >= 0) {
+        response.append_chunk(buffer.str());
+      }
+    }
+
     callback(response.header().status_line());
     return response.done();
   }
 
-  friend inline Response & operator<<(Response<T, C> & response, const char value) {
-    // TODO avoid this string creation
-    response.response.append_chunk(std::string{value});
-    response.bufferSize++;
-
-    if (response.bufferSize > constant::server::MAX_BUFFER) {
+  template <typename V>
+  friend inline Response & operator<<(Response<T, C> & response, V && value) {
+    static_assert(std::is_same_v<T, restinio::chunked_output_t>);
+    response.buffer << std::forward<V>(value);
+    if (response.buffer.tellp() > constant::server::MAX_BUFFER) {
+      response.response.append_chunk(response.buffer.str());
       response.response.flush();
-      response.bufferSize = 0;
-    }
-
-    return response;
-  }
-
-  friend inline Response & operator<<(Response<T, C> & response, const std::string & value) {
-    response.response.append_chunk(value);
-    response.bufferSize += value.size();
-
-    if (response.bufferSize > constant::server::MAX_BUFFER) {
-      response.response.flush();
-      response.bufferSize = 0;
+      response.buffer.str(std::string{});
     }
 
     return response;

@@ -7,6 +7,7 @@
 
 #include "constants.hpp"
 #include "file_handle.hpp"
+#include "format.hpp"
 #include "quick_value.hpp"
 #include "skull_value.hpp"
 
@@ -37,37 +38,25 @@ private:
     stream << '[';
     auto end = vector.cend() - 1;
     for (auto it = vector.cbegin(); it != end; ++it) {
-      stream << it->json() << ',';
+      stream << format::json{*it} << ',';
     }
-    stream << end->json() << ']';
+    stream << format::json{*end} << ']';
   }
-
-  template <typename T>
-  static std::optional<T> parseValue(std::ifstream & file);
 
   template <typename T>
   static void save(const User & user,
-                   std::unique_ptr<const std::vector<T>> && vector,
+                   const std::vector<T> * const vector,
                    std::unique_lock<std::mutex> &&) {
     FileHandle<std::ofstream> handle(user, TypeProps<T>::path);
     if (!handle.good()) return;
-    stream(*vector, handle.file);
+
+    for (const auto & value : *vector) {
+      handle.file << format::tsv{value} << '\n';
+    }
   }
 
   template <typename T>
-  static std::vector<T> load(const User & user) {
-    FileHandle<std::ifstream> handle(user, TypeProps<T>::path);
-    if (!handle.good()) return {};
-
-    std::vector<T> output;
-    while (true) {
-      auto value = parseValue<T>(handle.file);
-      if (!value) break;
-      output.emplace_back(std::move(*value));
-    }
-
-    return output;
-  }
+  static void load(const User & user, std::vector<T> & vector);
 
 public:
   Storage();
@@ -108,9 +97,9 @@ public:
     if (values == (this->*TypeProps<T>::map).cend()) return false;
 
     std::unique_lock lock{values->second.mutex};
-    values->second.vector.push_back(std::forward<T>(value));
+    values->second.vector.emplace_back(std::forward<T>(value));
 
-    std::thread saver{save<T>, user, std::make_unique<const std::vector<T>>(values->second.vector), std::move(lock)};
+    std::thread saver{save<T>, user, &(values->second.vector), std::move(lock)};
     saver.detach();
     return true;
   }
@@ -126,7 +115,7 @@ public:
     if (entry == values->second.vector.end()) return false;
     values->second.vector.erase(entry);
 
-    std::thread saver{save<T>, user, std::make_unique<const std::vector<T>>(values->second.vector), std::move(lock)};
+    std::thread saver{save<T>, user, &(values->second.vector), std::move(lock)};
     saver.detach();
     return true;
   }
@@ -136,7 +125,7 @@ public:
     const auto values = (this->*TypeProps<T>::map).find(user);
     if (values == (this->*TypeProps<T>::map).cend()) return 0;
 
-    return values->second.vector.size() * 50;
+    return values->second.vector.size() * 25;
   }
 };
 

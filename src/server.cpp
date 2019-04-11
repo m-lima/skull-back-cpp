@@ -8,8 +8,8 @@ namespace {
   Storage storage;
 
   struct ServerMode {
-    using SingleThread = asio::strand<asio::executor>;
-    using MultiThread = asio::executor;
+    using SingleThread = asio::executor;
+    using MultiThread = asio::strand<asio::executor>;
   };
 
   template <typename Strand>

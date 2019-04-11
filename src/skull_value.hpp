@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iomanip>
+
 #include <string>
 
 class SkullValue {
@@ -9,6 +11,13 @@ private:
   std::string mMillis;
 
 public:
+  static constexpr const auto size = 3;
+
+  SkullValue(const SkullValue &) = delete;
+  SkullValue(SkullValue &&) = default;
+  SkullValue & operator=(const SkullValue &) = delete;
+  SkullValue & operator=(SkullValue &&) = default;
+
   template <typename A, typename B, typename C>
   SkullValue(A && type,
              B && amount,
@@ -29,10 +38,6 @@ public:
     return mMillis;
   }
 
-  inline std::string json() const {
-    return R"({"type":")" + mType + R"(","amount":)" + mAmount + R"(,"millis":)" + mMillis + "}";
-  }
-
   inline bool operator==(const SkullValue & rhs) const {
     return mType == rhs.mType && mAmount == rhs.mAmount && mMillis == rhs.mMillis;
   }
@@ -41,12 +46,18 @@ public:
     return !(rhs == *this);
   }
 
-  friend std::ostream & operator<<(std::ostream & stream,
-                                   const SkullValue & value) {
-    stream << R"({"type":")" << value.mType
-           << R"(","amount":)" << value.mAmount
-           << R"(,"millis":)" << value.mMillis
+  template <typename T>
+  inline T & json(T & stream) const {
+    stream << R"({"type":")" << mType
+           << R"(","amount":)" << mAmount
+           << R"(,"millis":)" << mMillis
            << '}';
+    return stream;
+  }
+
+  template <typename T>
+  inline T & tsv(T & stream) const {
+    stream << mType << '\t' << mAmount << '\t' << mMillis;
     return stream;
   }
 };
