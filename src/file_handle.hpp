@@ -11,7 +11,7 @@ struct FileHandle {
   const std::string path;
   T file;
 
-  FileHandle(const User & user, const char * const fileName);
+  FileHandle(const std::string & user, const char * const fileName);
   virtual ~FileHandle();
 
   FileHandle(const FileHandle &) = delete;

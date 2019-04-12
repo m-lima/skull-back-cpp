@@ -47,7 +47,7 @@ Storage::Storage() {
 
 template <typename T>
 void Storage::load(const User & user, std::vector<T> & vector) {
-  FileHandle<std::ifstream> handle(user, TypeProps<T>::path);
+  FileHandle<std::ifstream> handle(user.name, TypeProps<T>::path);
   if (!handle.good()) return;
 
   std::string buffer;

@@ -44,7 +44,7 @@ private:
   }
 
   template <typename T>
-  static void save(const User & user,
+  static void save(const std::string && user,
                    const std::vector<T> * const vector,
                    std::unique_lock<std::mutex> &&) {
     FileHandle<std::ofstream> handle(user, TypeProps<T>::path);
@@ -99,7 +99,7 @@ public:
     std::unique_lock lock{values->second.mutex};
     values->second.vector.emplace_back(std::forward<T>(value));
 
-    std::thread saver{save<T>, user, &(values->second.vector), std::move(lock)};
+    std::thread saver{save<T>, std::string{user.name}, &(values->second.vector), std::move(lock)};
     saver.detach();
     return true;
   }
@@ -115,7 +115,7 @@ public:
     if (entry == values->second.vector.end()) return false;
     values->second.vector.erase(entry);
 
-    std::thread saver{save<T>, user, &(values->second.vector), std::move(lock)};
+    std::thread saver{save<T>, std::string{user.name}, &(values->second.vector), std::move(lock)};
     saver.detach();
     return true;
   }

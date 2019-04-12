@@ -6,8 +6,8 @@
 #include "constants.hpp"
 
 template <>
-FileHandle<std::ofstream>::FileHandle(const User & user, const char * const fileName)
-    : path{(boost::filesystem::path{constant::file::ROOT} / user.name / fileName).generic_string()},
+FileHandle<std::ofstream>::FileHandle(const std::string & user, const char * const fileName)
+    : path{(boost::filesystem::path{constant::file::ROOT} / user / fileName).generic_string()},
       file{path} {
   if (!file.good()) {
     file.close();
@@ -22,8 +22,8 @@ FileHandle<std::ofstream>::~FileHandle() {
 }
 
 template <>
-FileHandle<std::ifstream>::FileHandle(const User & user, const char * const fileName)
-    : path{(boost::filesystem::path{constant::file::ROOT} / user.name / fileName).generic_string()},
+FileHandle<std::ifstream>::FileHandle(const std::string & user, const char * const fileName)
+    : path{(boost::filesystem::path{constant::file::ROOT} / user / fileName).generic_string()},
       file{path} {
   if (!file.good()) {
     file.close();
