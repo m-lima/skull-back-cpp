@@ -58,6 +58,19 @@ private:
   template <typename T>
   static void load(const User & user, std::vector<T> & vector);
 
+  template <typename T, typename F>
+  bool modifyAndSave(const User & user, F && modifier) {
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend()) return false;
+
+    std::unique_lock lock{values->second.mutex};
+    if (!std::forward<F>(modifier)(values->second.vector)) return false;
+
+    std::thread saver{save<T>, std::string{user.name}, &(values->second.vector), std::move(lock)};
+    saver.detach();
+    return true;
+  }
+
 public:
   Storage();
 
@@ -93,31 +106,28 @@ public:
 
   template <typename T>
   bool add(const User & user, T && value) {
-    const auto values = (this->*TypeProps<T>::map).find(user);
-    if (values == (this->*TypeProps<T>::map).cend()) return false;
-
-    std::unique_lock lock{values->second.mutex};
-    values->second.vector.emplace_back(std::forward<T>(value));
-
-    std::thread saver{save<T>, std::string{user.name}, &(values->second.vector), std::move(lock)};
-    saver.detach();
-    return true;
+    return modifyAndSave<T>(user, [&](std::vector<T> & vector) {
+      vector.emplace_back(std::forward<T>(value));
+      return true;
+    });
   }
 
   template <typename T>
-  bool remove(const User & user, T && value) {
-    const auto values = (this->*TypeProps<T>::map).find(user);
-    if (values == (this->*TypeProps<T>::map).cend()) return false;
+  bool edit(const User & user, T && value, std::size_t id) {
+    return modifyAndSave<T>(user, [&](std::vector<T> & vector) {
+      if (id >= vector.size()) return false;
+      vector[id] = std::forward<T>(value);
+      return true;
+    });
+  }
 
-    std::unique_lock lock{values->second.mutex};
-
-    auto entry = std::find(values->second.vector.begin(), values->second.vector.end(), value);
-    if (entry == values->second.vector.end()) return false;
-    values->second.vector.erase(entry);
-
-    std::thread saver{save<T>, std::string{user.name}, &(values->second.vector), std::move(lock)};
-    saver.detach();
-    return true;
+  template <typename T>
+  bool remove(const User & user, std::size_t id) {
+    return modifyAndSave<T>(user, [id](std::vector<T> & vector) {
+      if (id >= vector.size()) return false;
+      vector.erase(vector.begin() + id);
+      return true;
+    });
   }
 
   template <typename T>

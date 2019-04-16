@@ -67,9 +67,11 @@ namespace server {
     auto router = std::make_unique<restinio::router::express_router_t<>>();
 
     router->http_get(constant::path::QUICK, [](auto request, auto) { return getQuick(request); });
+    router->http_put(constant::path::QUICK, [](auto request, auto) { return putQuick(request); });
     router->http_post(constant::path::QUICK, [](auto request, auto) { return postQuick(request); });
     router->http_delete(constant::path::QUICK, [](auto request, auto) { return deleteQuick(request); });
     router->http_get(constant::path::SKULL, [](auto request, auto) { return getSkull(request); });
+    router->http_put(constant::path::SKULL, [](auto request, auto) { return putSkull(request); });
     router->http_post(constant::path::SKULL, [](auto request, auto) { return postSkull(request); });
     router->http_delete(constant::path::SKULL, [](auto request, auto) { return deleteSkull(request); });
     router->non_matched_request_handler([](auto request) { return notFound(request); });
@@ -95,7 +97,7 @@ namespace server {
     return getOrStream<QuickValue>(std::move(context));
   }
 
-  Handler postQuick(Context && context) noexcept {
+  Handler putQuick(Context && context) noexcept {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
@@ -127,30 +129,26 @@ namespace server {
     }
   }
 
+  Handler postQuick(Context && context) noexcept {
+    return notFound(std::move(context));
+  }
+
   Handler deleteQuick(Context && context) noexcept {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
       const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has(constant::query::TYPE)
-          || !query.has(constant::query::AMOUNT)
-          || !query.has(constant::query::ICON)) {
+      if (!query.has(constant::query::ID)) return badRequest(std::move(context));
+
+      std::uint64_t id;
+      try {
+        // id = std::stoull(std::string{query[constant::query::ID]});
+        id = restinio::cast_to<decltype(id)>(query[constant::query::ID]);
+      } catch (const std::exception & e) {
         return badRequest(std::move(context));
       }
 
-      QuickValue value{query[constant::query::TYPE], query[constant::query::AMOUNT], query[constant::query::ICON]};
-
-      if (value.type().empty() || value.amount().empty() || value.icon().empty()) {
-        return badRequest(std::move(context));
-      }
-
-      if (value.type() == constant::query::UNDEFINED
-          || value.amount() == constant::query::UNDEFINED
-          || value.icon() == constant::query::UNDEFINED) {
-        return badRequest(std::move(context));
-      }
-
-      return storage.remove(context.user, std::move(value))
+      return storage.remove<QuickValue>(context.user, id)
              ? context.createResponse(restinio::status_accepted()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
     } catch (const std::exception & e) {
@@ -163,7 +161,7 @@ namespace server {
     return getOrStream<SkullValue>(std::move(context));
   }
 
-  Handler postSkull(Context && context) noexcept {
+  Handler putSkull(Context && context) noexcept {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
@@ -195,30 +193,57 @@ namespace server {
     }
   }
 
+  Handler postSkull(Context && context) noexcept {
+    return notFound(std::move(context));
+    // try {
+    //   if (!storage.authorized(context.user)) return forbidden(std::move(context));
+
+    //   const auto query = restinio::parse_query(context.request->header().query());
+    //   if (!query.has(constant::query::TYPE)
+    //       || !query.has(constant::query::AMOUNT)
+    //       || !query.has(constant::query::MILLIS)
+    //       || !query.has(constant::query::ID)) {
+    //     return badRequest(std::move(context));
+    //   }
+
+    //   SkullValue value{query[constant::query::TYPE],
+    //                    query[constant::query::AMOUNT],
+    //                    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+    //                        std::chrono::system_clock::now().time_since_epoch()
+    //                    ).count())};
+
+    //   if (value.type().empty() || value.amount().empty()) {
+    //     return badRequest(std::move(context));
+    //   }
+
+    //   if (value.type() == constant::query::UNDEFINED || value.amount() == constant::query::UNDEFINED) {
+    //     return badRequest(std::move(context));
+    //   }
+
+    //   return storage.add(context.user, std::move(value))
+    //          ? context.createResponse(restinio::status_created()).done()
+    //          : context.createResponse(restinio::status_internal_server_error()).done();
+    // } catch (const std::exception & e) {
+    //   spdlog::error("{} Exception: {:s}", context, e.what());
+    //   return internalServerError(std::move(context));
+    // }
+  }
+
   Handler deleteSkull(Context && context) noexcept {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
       const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has(constant::query::TYPE)
-          || !query.has(constant::query::AMOUNT)
-          || !query.has(constant::query::MILLIS)) {
+      if (!query.has(constant::query::ID)) return badRequest(std::move(context));
+
+      std::uint64_t id;
+      try {
+        id = restinio::cast_to<decltype(id)>(query[constant::query::ID]);
+      } catch (const std::exception & e) {
         return badRequest(std::move(context));
       }
 
-      SkullValue value{query[constant::query::TYPE], query[constant::query::AMOUNT], query[constant::query::MILLIS]};
-
-      if (value.type().empty() || value.amount().empty() || value.millis().empty()) {
-        return badRequest(std::move(context));
-      }
-
-      if (value.type() == constant::query::UNDEFINED
-          || value.amount() == constant::query::UNDEFINED
-          || value.millis() == constant::query::UNDEFINED) {
-        return badRequest(std::move(context));
-      }
-
-      return storage.remove(context.user, std::move(value))
+      return storage.remove<SkullValue>(context.user, id)
              ? context.createResponse(restinio::status_accepted()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
     } catch (const std::exception & e) {

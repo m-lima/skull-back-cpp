@@ -32,5 +32,6 @@ namespace constant {
     constexpr const auto AMOUNT = "amount";
     constexpr const auto MILLIS = "millis";
     constexpr const auto ICON = "icon";
+    constexpr const auto ID = "id";
   }
 }
