@@ -4,34 +4,34 @@
 
 namespace constant {
   namespace server {
-    constexpr const auto MAX_BUFFER = 64 * 1024;
+    constexpr auto const MAX_BUFFER = 64 * 1024;
   }
 
   namespace path {
-    constexpr const auto QUICK = "/quick";
-    constexpr const auto SKULL = "/";
+    constexpr char const QUICK[] = "/quick/";
+    constexpr char const SKULL[] = "/";
   }
 
   namespace file {
-    constexpr const auto ROOT = "/data";
-    constexpr const auto QUICK = "quick";
-    constexpr const auto SKULL = "skull";
+    constexpr char const ROOT[] = "/data";
+    constexpr char const QUICK[] = "quick";
+    constexpr char const SKULL[] = "skull";
   }
 
   namespace header {
-    constexpr const auto X_USER = "X-User";
+    constexpr char const X_USER[] = "X-User";
   }
 
   namespace user {
-    constexpr const User UNKNOWN = "??";
+    constexpr User const UNKNOWN = "??";
   }
 
-  namespace query {
-    constexpr const auto UNDEFINED = "undefined";
-    constexpr const auto TYPE = "type";
-    constexpr const auto AMOUNT = "amount";
-    constexpr const auto MILLIS = "millis";
-    constexpr const auto ICON = "icon";
-    constexpr const auto ID = "id";
+  namespace param {
+    constexpr char const UNDEFINED[] = "undefined";
+    constexpr char const TYPE[] = "type";
+    constexpr char const AMOUNT[] = "amount";
+    constexpr char const MILLIS[] = "millis";
+    constexpr char const ICON[] = "icon";
+    constexpr char const ID[] = "id";
   }
 }

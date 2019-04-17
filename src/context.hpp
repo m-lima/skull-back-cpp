@@ -10,7 +10,7 @@ public:
   const restinio::request_handle_t request;
   const User user;
 
-  Context(restinio::request_handle_t request);
+  Context(restinio::request_handle_t && request);
 
   template <typename T = restinio::restinio_controlled_output_t>
   auto createResponse(restinio::http_status_line_t && status) {

@@ -1,5 +1,6 @@
 #include "server.hpp"
 
+#include <mfl/string.hpp>
 #include <spdlog/spdlog.h>
 
 #include "storage.hpp"
@@ -60,21 +61,26 @@ namespace {
       return internalServerError(std::move(context));
     }
   }
+
+  constexpr auto const QUICK_ID = mfl::string::Literal{constant::path::QUICK} + ":" + constant::param::ID + R""((\d+))"";
+  constexpr auto const SKULL_ID = mfl::string::Literal{constant::path::SKULL} + ":" + constant::param::ID + R""((\d+))"";
 }
 
 namespace server {
   void listen(std::string && host, std::uint16_t port, std::uint16_t threadCount) noexcept {
     auto router = std::make_unique<restinio::router::express_router_t<>>();
 
-    router->http_get(constant::path::QUICK, [](auto request, auto) { return getQuick(request); });
-    router->http_put(constant::path::QUICK, [](auto request, auto) { return putQuick(request); });
-    router->http_post(constant::path::QUICK, [](auto request, auto) { return postQuick(request); });
-    router->http_delete(constant::path::QUICK, [](auto request, auto) { return deleteQuick(request); });
-    router->http_get(constant::path::SKULL, [](auto request, auto) { return getSkull(request); });
-    router->http_put(constant::path::SKULL, [](auto request, auto) { return putSkull(request); });
-    router->http_post(constant::path::SKULL, [](auto request, auto) { return postSkull(request); });
-    router->http_delete(constant::path::SKULL, [](auto request, auto) { return deleteSkull(request); });
-    router->non_matched_request_handler([](auto request) { return notFound(request); });
+    router->http_get(constant::path::QUICK, [](auto request, auto) { return getQuick(std::move(request)); });
+    router->http_put(constant::path::QUICK, [](auto request, auto) { return putQuick(std::move(request)); });
+    router->http_post(QUICK_ID.string, [](auto request, auto params) { return postQuick(std::move(request), std::move(params)); });
+    router->http_delete(QUICK_ID.string, [](auto request, auto params) { return deleteQuick(std::move(request), std::move(params)); });
+
+    router->http_get(constant::path::SKULL, [](auto request, auto) { return getSkull(std::move(request)); });
+    router->http_put(constant::path::SKULL, [](auto request, auto) { return putSkull(std::move(request)); });
+    router->http_post(SKULL_ID.string, [](auto request, auto params) { return postSkull(std::move(request), std::move(params)); });
+    router->http_delete(SKULL_ID.string, [](auto request, auto params) { return deleteSkull(std::move(request), std::move(params)); });
+
+    router->non_matched_request_handler([](auto request) { return notFound(std::move(request)); });
 
     if (threadCount < 2) {
       spdlog::info("Listening on {:s}:{:d} on a single thread..", host, port);
@@ -102,21 +108,21 @@ namespace server {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
       const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has(constant::query::TYPE)
-          || !query.has(constant::query::AMOUNT)
-          || !query.has(constant::query::ICON)) {
+      if (!query.has(constant::param::TYPE)
+          || !query.has(constant::param::AMOUNT)
+          || !query.has(constant::param::ICON)) {
         return badRequest(std::move(context));
       }
 
-      QuickValue value{query[constant::query::TYPE], query[constant::query::AMOUNT], query[constant::query::ICON]};
+      QuickValue value{query[constant::param::TYPE], query[constant::param::AMOUNT], query[constant::param::ICON]};
 
       if (value.type().empty() || value.amount().empty() || value.icon().empty()) {
         return badRequest(std::move(context));
       }
 
-      if (value.type() == constant::query::UNDEFINED
-          || value.amount() == constant::query::UNDEFINED
-          || value.icon() == constant::query::UNDEFINED) {
+      if (value.type() == constant::param::UNDEFINED
+          || value.amount() == constant::param::UNDEFINED
+          || value.icon() == constant::param::UNDEFINED) {
         return badRequest(std::move(context));
       }
 
@@ -129,21 +135,17 @@ namespace server {
     }
   }
 
-  Handler postQuick(Context && context) noexcept {
+  Handler postQuick(Context && context, restinio::router::route_params_t &&) noexcept {
     return notFound(std::move(context));
   }
 
-  Handler deleteQuick(Context && context) noexcept {
+  Handler deleteQuick(Context && context, restinio::router::route_params_t && params) noexcept {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
-      const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has(constant::query::ID)) return badRequest(std::move(context));
-
       std::uint64_t id;
       try {
-        // id = std::stoull(std::string{query[constant::query::ID]});
-        id = restinio::cast_to<decltype(id)>(query[constant::query::ID]);
+        id = restinio::cast_to<decltype(id)>(params[constant::param::ID]);
       } catch (const std::exception & e) {
         return badRequest(std::move(context));
       }
@@ -166,12 +168,12 @@ namespace server {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
       const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has(constant::query::TYPE) || !query.has(constant::query::AMOUNT)) {
+      if (!query.has(constant::param::TYPE) || !query.has(constant::param::AMOUNT)) {
         return badRequest(std::move(context));
       }
 
-      SkullValue value{query[constant::query::TYPE],
-                       query[constant::query::AMOUNT],
+      SkullValue value{query[constant::param::TYPE],
+                       query[constant::param::AMOUNT],
                        std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
                            std::chrono::system_clock::now().time_since_epoch()
                        ).count())};
@@ -180,7 +182,7 @@ namespace server {
         return badRequest(std::move(context));
       }
 
-      if (value.type() == constant::query::UNDEFINED || value.amount() == constant::query::UNDEFINED) {
+      if (value.type() == constant::param::UNDEFINED || value.amount() == constant::param::UNDEFINED) {
         return badRequest(std::move(context));
       }
 
@@ -193,21 +195,21 @@ namespace server {
     }
   }
 
-  Handler postSkull(Context && context) noexcept {
+  Handler postSkull(Context && context, restinio::router::route_params_t &&) noexcept {
     return notFound(std::move(context));
     // try {
     //   if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
     //   const auto query = restinio::parse_query(context.request->header().query());
-    //   if (!query.has(constant::query::TYPE)
-    //       || !query.has(constant::query::AMOUNT)
-    //       || !query.has(constant::query::MILLIS)
-    //       || !query.has(constant::query::ID)) {
+    //   if (!query.has(constant::param::TYPE)
+    //       || !query.has(constant::param::AMOUNT)
+    //       || !query.has(constant::param::MILLIS)
+    //       || !query.has(constant::param::ID)) {
     //     return badRequest(std::move(context));
     //   }
 
-    //   SkullValue value{query[constant::query::TYPE],
-    //                    query[constant::query::AMOUNT],
+    //   SkullValue value{query[constant::param::TYPE],
+    //                    query[constant::param::AMOUNT],
     //                    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
     //                        std::chrono::system_clock::now().time_since_epoch()
     //                    ).count())};
@@ -216,7 +218,7 @@ namespace server {
     //     return badRequest(std::move(context));
     //   }
 
-    //   if (value.type() == constant::query::UNDEFINED || value.amount() == constant::query::UNDEFINED) {
+    //   if (value.type() == constant::param::UNDEFINED || value.amount() == constant::param::UNDEFINED) {
     //     return badRequest(std::move(context));
     //   }
 
@@ -229,16 +231,13 @@ namespace server {
     // }
   }
 
-  Handler deleteSkull(Context && context) noexcept {
+  Handler deleteSkull(Context && context, restinio::router::route_params_t && params) noexcept {
     try {
       if (!storage.authorized(context.user)) return forbidden(std::move(context));
 
-      const auto query = restinio::parse_query(context.request->header().query());
-      if (!query.has(constant::query::ID)) return badRequest(std::move(context));
-
       std::uint64_t id;
       try {
-        id = restinio::cast_to<decltype(id)>(query[constant::query::ID]);
+        id = restinio::cast_to<decltype(id)>(params[constant::param::ID]);
       } catch (const std::exception & e) {
         return badRequest(std::move(context));
       }
