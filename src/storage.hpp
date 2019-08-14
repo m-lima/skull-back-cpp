@@ -36,8 +36,8 @@ private:
   template <typename T, typename S>
   static void stream(const std::vector<T> & vector, S & stream) {
     stream << '[';
-    auto end = vector.cend() - 1;
-    for (auto it = vector.cbegin(); it != end; ++it) {
+    auto end = vector.crend() - 1;
+    for (auto it = vector.crbegin(); it != end; ++it) {
       stream << format::json{*it} << ',';
     }
     stream << format::json{*end} << ']';

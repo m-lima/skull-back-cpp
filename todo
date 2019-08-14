@@ -4,5 +4,6 @@
 [ ]. Avoid std::move if not necessary
 [ ]. CMake envsubst
 [ ]! Reject amount = 0
+[ ]! Commit command after reauth
 [ ]  Backup daily
 [x]! Lock down other methods by same user when one method is taking place
