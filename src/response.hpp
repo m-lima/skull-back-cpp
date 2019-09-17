@@ -10,17 +10,16 @@ class Response {
 
   restinio::response_builder_t<T> response;
   const C callback;
-  std::stringstream buffer;
+  std::stringstream buffer{};
 
   Response(restinio::response_builder_t<T> && response, C && callback)
       : response{std::move(response)},
         callback{std::move(callback)} {}
 
-  Response(const Response &) = delete;
-  Response & operator=(const Response &) = delete;
-
 public:
   Response(Response && response) : response{std::move(response.response)}, callback{std::move(response.callback)} {}
+  Response(const Response &) = delete;
+  Response & operator=(const Response &) = delete;
 
   inline Response && appendHeader(restinio::http_field_t field, std::string && value) && {
     response.append_header(field, std::move(value));

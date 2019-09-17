@@ -61,11 +61,13 @@ private:
 public:
   Storage();
 
+  [[nodiscard]]
   inline bool authorized(const User & user) const {
     return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.cend();
   }
 
   template <typename T>
+  [[nodiscard]]
   std::string get(const User & user) {
     const auto values = (this->*TypeProps<T>::map).find(user);
     if (values == (this->*TypeProps<T>::map).cend()) return "[]";
@@ -120,7 +122,27 @@ public:
     return true;
   }
 
+  bool reload(const User & user) {
+    const auto quick = mQuickValues.find(user);
+    if (quick == mQuickValues.cend()) return false;
+
+    const auto skull = mSkullValues.find(user);
+    if (skull == mSkullValues.cend()) return false;
+
+    std::thread loader{[&](const std::string && user){
+      std::lock_guard quickLock{quick->second.mutex};
+      std::lock_guard skullLock{skull->second.mutex};
+
+      load(user, quick->second.vector);
+      load(user, skull->second.vector);
+    }, std::string{user.name}};
+    loader.detach();
+
+    return true;
+  }
+
   template <typename T>
+  [[nodiscard]]
   inline std::size_t estimateSize(const User & user) const {
     const auto values = (this->*TypeProps<T>::map).find(user);
     if (values == (this->*TypeProps<T>::map).cend()) return 0;

@@ -10,6 +10,7 @@ namespace constant {
   namespace path {
     constexpr const auto QUICK = "/quick";
     constexpr const auto SKULL = "/";
+    constexpr const auto RELOAD = "/reload";
   }
 
   namespace file {

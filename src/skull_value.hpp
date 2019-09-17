@@ -26,14 +26,17 @@ public:
         mAmount{std::forward<B>(amount)},
         mMillis{std::forward<C>(millis)} {}
 
+  [[nodiscard]]
   inline const std::string & type() const {
     return mType;
   }
 
+  [[nodiscard]]
   inline const std::string & amount() const {
     return mAmount;
   }
 
+  [[nodiscard]]
   inline const std::string & millis() const {
     return mMillis;
   }

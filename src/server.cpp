@@ -5,7 +5,7 @@
 #include "storage.hpp"
 
 namespace {
-  Storage storage;
+  Storage storage{};
 
   struct ServerMode {
     using SingleThread = asio::executor;
@@ -72,6 +72,7 @@ namespace server {
     router->http_get(constant::path::SKULL, [](auto request, auto) { return getSkull(request); });
     router->http_post(constant::path::SKULL, [](auto request, auto) { return postSkull(request); });
     router->http_delete(constant::path::SKULL, [](auto request, auto) { return deleteSkull(request); });
+    router->http_get(constant::path::RELOAD, [](auto request, auto) { return reload(request); });
     router->non_matched_request_handler([](auto request) { return notFound(request); });
 
     if (threadCount < 2) {
@@ -219,6 +220,19 @@ namespace server {
       }
 
       return storage.remove(context.user, std::move(value))
+             ? context.createResponse(restinio::status_accepted()).done()
+             : context.createResponse(restinio::status_internal_server_error()).done();
+    } catch (const std::exception & e) {
+      spdlog::error("{} Exception: {:s}", context, e.what());
+      return internalServerError(std::move(context));
+    }
+  }
+
+  Handler reload(Context && context) noexcept {
+    try {
+      if (!storage.authorized(context.user)) return forbidden(std::move(context));
+
+      return storage.reload(context.user)
              ? context.createResponse(restinio::status_accepted()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
     } catch (const std::exception & e) {

@@ -24,14 +24,17 @@ public:
         mAmount{std::forward<B>(amount)},
         mIcon{std::forward<C>(icon)} {}
 
+  [[nodiscard]]
   inline const std::string & type() const {
     return mType;
   }
 
+  [[nodiscard]]
   inline const std::string & amount() const {
     return mAmount;
   }
 
+  [[nodiscard]]
   inline const std::string & icon() const {
     return mIcon;
   }

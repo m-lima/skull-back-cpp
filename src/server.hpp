@@ -15,4 +15,5 @@ namespace server {
   Handler getSkull(Context &&) noexcept;
   Handler postSkull(Context &&) noexcept;
   Handler deleteSkull(Context &&) noexcept;
+  Handler reload(Context &&) noexcept;
 }
