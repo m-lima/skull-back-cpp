@@ -21,7 +21,7 @@ private:
     LockedVector(std::vector<T> && vector) : vector{std::move(vector)} {}
 
     LockedVector(const std::vector<T> &) = delete;
-    LockedVector(LockedVector && vector) = default;
+    LockedVector(LockedVector &&) = default;
     LockedVector(const LockedVector &) = delete;
     LockedVector & operator=(const LockedVector &) = delete;
   };

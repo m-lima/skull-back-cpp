@@ -3,7 +3,7 @@
 #include "user.hpp"
 
 struct UserIterator {
-  static void forEach(std::function<void(const User &)> executor);
+  static void forEach(const std::function<void(const User &)> & executor);
 };
 
 template <typename T>

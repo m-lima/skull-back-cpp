@@ -17,7 +17,7 @@ class Response {
         callback{std::move(callback)} {}
 
 public:
-  Response(Response && response) : response{std::move(response.response)}, callback{std::move(response.callback)} {}
+  Response(Response &&) = default;
   Response(const Response &) = delete;
   Response & operator=(const Response &) = delete;
 

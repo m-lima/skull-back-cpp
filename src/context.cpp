@@ -27,7 +27,7 @@ namespace {
   }
 }
 
-Context::Context(restinio::request_handle_t request)
+Context::Context(const restinio::request_handle_t & request)
     : id{COUNTER++},
       request{request},
       user{request->header().has_field(constant::header::X_USER)

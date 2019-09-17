@@ -37,7 +37,7 @@ FileHandle<std::ifstream>::~FileHandle() {
   file.close();
 }
 
-void UserIterator::forEach(std::function<void(const User &)> executor) {
+void UserIterator::forEach(const std::function<void(const User &)> & executor) {
   auto root = boost::filesystem::path{constant::file::ROOT};
 
   for (auto it{boost::filesystem::directory_iterator{root}}; it != boost::filesystem::directory_iterator{}; ++it) {
