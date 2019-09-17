@@ -1,9 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <sstream>
 #include <iostream>
-
-#include "server.hpp"
 
 TEST(StreamResponse, size_watcher) {
   std::stringstream stream;

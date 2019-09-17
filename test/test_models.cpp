@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <sstream>
-
 #include "skull_value.hpp"
 #include "quick_value.hpp"
 #include "user.hpp"
