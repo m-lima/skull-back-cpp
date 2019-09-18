@@ -51,6 +51,7 @@ void Storage::load(const User & user, std::vector<T> & vector) {
   if (!handle.good()) return;
 
   std::string buffer;
+  vector.clear();
   while (std::getline(handle.file, buffer)) {
     if (buffer.empty()) continue;
 
