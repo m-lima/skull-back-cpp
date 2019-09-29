@@ -5,4 +5,5 @@ docker rm skull
 docker create \
   --name skull \
   --volume "${DATA_LOCATION}":/data \
+  --net fly \
   skull
