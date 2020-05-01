@@ -7,3 +7,10 @@
 [ ]! Commit command after reauth
 [ ]  Backup daily
 [x]! Lock down other methods by same user when one method is taking place
+
+# Usability
+[ ]! Can't place fractional number on iOS
+[ ]  Categories have custom color and icon
+[ ]  Plot and list based on category, not "quick"
+[ ]  Track a single category in graph (possibly line graph)
+[ ]  Avoid loading and storing of full dataset
