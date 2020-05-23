@@ -31,9 +31,13 @@ namespace constant {
 
   namespace query {
     constexpr const auto UNDEFINED = "undefined";
-    constexpr const auto TYPE = "type";
+    constexpr const auto ID = "id";
+    constexpr const auto NAME = "name";
+    constexpr const auto COLOR = "color";
+    constexpr const auto ICON = "icon";
+    constexpr const auto UNIT_PRICE = "unitPrice";
+    constexpr const auto SKULL = "skull";
     constexpr const auto AMOUNT = "amount";
     constexpr const auto MILLIS = "millis";
-    constexpr const auto ICON = "icon";
   }
 }

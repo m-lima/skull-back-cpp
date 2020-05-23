@@ -1,16 +1,15 @@
 #pragma once
 
 #include <iomanip>
-
 #include <string>
 
 class Skull {
 private:
-  std::string mId;
+  unsigned short mId;
   std::string mName;
   std::string mColor;
   std::string mIcon;
-  std::string mUnitPrice;
+  float mUnitPrice;
 
 public:
   static constexpr const auto size = 5;
@@ -20,16 +19,16 @@ public:
   Skull & operator=(const Skull &) = delete;
   Skull & operator=(Skull &&) = default;
 
-  template <typename A, typename B, typename C, typename D, typename E>
-  Skull(A && id, B && name, C && color, D && icon, E && unitPrice)
-      : mId{std::forward<A>(id)},
-        mName{std::forward<B>(name)},
-        mColor{std::forward<C>(color)},
-        mIcon{std::forward<D>(icon)},
-        mUnitPrice{std::forward<E>(mUnitPrice)} {}
+  template <typename A, typename B, typename C>
+  Skull(unsigned short id, A && name, B && color, C && icon, float unitPrice)
+      : mId{id},
+        mName{std::forward<A>(name)},
+        mColor{std::forward<B>(color)},
+        mIcon{std::forward<C>(icon)},
+        mUnitPrice{unitPrice} {}
 
   [[nodiscard]]
-  inline const std::string & id() const {
+  inline const unsigned short & id() const {
     return mId;
   }
 
@@ -49,12 +48,12 @@ public:
   }
 
   [[nodiscard]]
-  inline const std::string & unitPrice() const {
+  inline const float & unitPrice() const {
     return mUnitPrice;
   }
 
   inline bool operator==(const Skull & rhs) const {
-    return mId == rhs.mId || mName == rhs.mName;
+    return mId == rhs.mId;
   }
 
   inline bool operator!=(const Skull & rhs) const {
@@ -85,8 +84,8 @@ public:
 
 struct Quick {
 private:
-  std::string mSkull;
-  std::string mAmount;
+  unsigned short mSkull;
+  float mAmount;
 
 public:
   static constexpr const auto size = 2;
@@ -96,19 +95,18 @@ public:
   Quick & operator=(const Quick &) = delete;
   Quick & operator=(Quick &&) = default;
 
-  template <typename A, typename B>
-  Quick(A && skull,
-        B && amount)
+  template <typename A>
+  Quick(A && skull, float amount)
       : mSkull{std::forward<A>(skull)},
-        mAmount{std::forward<B>(amount)} {}
+        mAmount{amount} {}
 
   [[nodiscard]]
-  inline const std::string & skull() const {
+  inline const unsigned short & skull() const {
     return mSkull;
   }
 
   [[nodiscard]]
-  inline const std::string & amount() const {
+  inline const float & amount() const {
     return mAmount;
   }
 
@@ -137,10 +135,10 @@ public:
 
 struct Occurrence {
 private:
-  std::string mId;
-  std::string mSkull;
-  std::string mAmount;
-  std::string mMillis;
+  unsigned short mId;
+  unsigned short mSkull;
+  float mAmount;
+  long mMillis;
 
 public:
   static constexpr const auto size = 4;
@@ -150,33 +148,32 @@ public:
   Occurrence & operator=(const Occurrence &) = delete;
   Occurrence & operator=(Occurrence &&) = default;
 
-  template <typename A, typename B, typename C, typename D>
-  Occurrence(A && id,
-             B && skull,
-             C && amount,
-             D && millis)
-      : mId{std::forward<A>(id)},
-        mSkull{std::forward<B>(skull)},
-        mAmount{std::forward<C>(amount)},
-        mMillis{std::forward<D>(millis)} {}
+  Occurrence(unsigned short id,
+             unsigned short skull,
+             float amount,
+             long millis)
+      : mId{id},
+        mSkull{skull},
+        mAmount{amount},
+        mMillis{millis} {}
 
   [[nodiscard]]
-  inline const std::string & id() const {
+  inline const unsigned short & id() const {
     return mId;
   }
 
   [[nodiscard]]
-  inline const std::string & skull() const {
+  inline const unsigned short & skull() const {
     return mSkull;
   }
 
   [[nodiscard]]
-  inline const std::string & amount() const {
+  inline const float & amount() const {
     return mAmount;
   }
 
   [[nodiscard]]
-  inline const std::string & millis() const {
+  inline const long & millis() const {
     return mMillis;
   }
 

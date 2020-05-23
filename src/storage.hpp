@@ -68,6 +68,18 @@ public:
 
   template <typename T>
   [[nodiscard]]
+  unsigned short nextId(const User & user) {
+    const auto values = (this->*TypeProps<T>::map).find(user);
+    if (values == (this->*TypeProps<T>::map).cend()) return 1;
+    if (values->second.vector.empty()) return 1;
+
+    std::lock_guard lock{values->second.mutex};
+
+    return values->second.vector.back().id() + 1;
+  }
+
+  template <typename T>
+  [[nodiscard]]
   std::string get(const User & user) {
     const auto values = (this->*TypeProps<T>::map).find(user);
     if (values == (this->*TypeProps<T>::map).cend()) return "[]";
