@@ -131,6 +131,8 @@ namespace server {
              : context.createResponse(restinio::status_internal_server_error()).done();
     } catch (const std::logic_error & e) {
       return badRequest(std::move(context));
+    } catch (const restinio::exception_t & e) {
+      return badRequest(std::move(context));
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));
@@ -157,6 +159,8 @@ namespace server {
              ? context.createResponse(restinio::status_accepted()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
     } catch (const std::logic_error & e) {
+      return badRequest(std::move(context));
+    } catch (const restinio::exception_t & e) {
       return badRequest(std::move(context));
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
@@ -189,6 +193,8 @@ namespace server {
              : context.createResponse(restinio::status_internal_server_error()).done();
     } catch (const std::logic_error & e) {
       return badRequest(std::move(context));
+    } catch (const restinio::exception_t & e) {
+      return badRequest(std::move(context));
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));
@@ -215,6 +221,10 @@ namespace server {
       return storage.remove(context.user, std::move(value))
              ? context.createResponse(restinio::status_accepted()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
+    } catch (const std::logic_error & e) {
+      return badRequest(std::move(context));
+    } catch (const restinio::exception_t & e) {
+      return badRequest(std::move(context));
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));
@@ -248,6 +258,10 @@ namespace server {
       return storage.add(context.user, std::move(value))
              ? context.createResponse(restinio::status_created()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
+    } catch (const std::logic_error & e) {
+      return badRequest(std::move(context));
+    } catch (const restinio::exception_t & e) {
+      return badRequest(std::move(context));
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));
@@ -272,6 +286,10 @@ namespace server {
       return storage.remove(context.user, std::move(value))
              ? context.createResponse(restinio::status_accepted()).done()
              : context.createResponse(restinio::status_internal_server_error()).done();
+    } catch (const std::logic_error & e) {
+      return badRequest(std::move(context));
+    } catch (const restinio::exception_t & e) {
+      return badRequest(std::move(context));
     } catch (const std::exception & e) {
       spdlog::error("{} Exception: {:s}", context, e.what());
       return internalServerError(std::move(context));

@@ -1,7 +1,26 @@
 #pragma once
 
+#include <charconv>
 #include <iomanip>
 #include <string>
+
+namespace {
+  template<typename T>
+  T stot(std::string_view string) {
+    T t;
+    auto result = std::from_chars(string.data(), string.data() + string.size(), t);
+    if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
+      throw std::runtime_error{"invalid string input"};
+    }
+    return t;
+  }
+
+  template<>
+  float stot<float>(std::string_view string) {
+    std::string buffer{string};
+    return std::stof(buffer);
+  }
+}
 
 class Skull {
 private:
@@ -26,6 +45,13 @@ public:
         mColor{std::forward<B>(color)},
         mIcon{std::forward<C>(icon)},
         mUnitPrice{unitPrice} {}
+
+  Skull(std::array<std::string_view, size> params)
+      : mId{stot<unsigned short>(params[0])},
+        mName{params[1]},
+        mColor{params[2]},
+        mIcon{params[3]},
+        mUnitPrice{stot<float>(params[4])} {}
 
   [[nodiscard]]
   inline const unsigned short & id() const {
@@ -95,10 +121,13 @@ public:
   Quick & operator=(const Quick &) = delete;
   Quick & operator=(Quick &&) = default;
 
-  template <typename A>
-  Quick(A && skull, float amount)
-      : mSkull{std::forward<A>(skull)},
+  Quick(unsigned short skull, float amount)
+      : mSkull{skull},
         mAmount{amount} {}
+
+  Quick(std::array<std::string_view, size> params)
+      : mSkull{stot<unsigned short>(params[0])},
+        mAmount{stot<float>(params[1])} {}
 
   [[nodiscard]]
   inline const unsigned short & skull() const {
@@ -156,6 +185,12 @@ public:
         mSkull{skull},
         mAmount{amount},
         mMillis{millis} {}
+
+  Occurrence(std::array<std::string_view, size> params)
+      : mId{stot<unsigned short>(params[0])},
+        mSkull{stot<unsigned short>(params[1])},
+        mAmount{stot<float>(params[2])},
+        mMillis{stot<long>(params[3])} {}
 
   [[nodiscard]]
   inline const unsigned short & id() const {

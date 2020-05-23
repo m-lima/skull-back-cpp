@@ -22,7 +22,11 @@ namespace {
 
     segments[T::size - 1] = view.substr(index);
 
-    return std::make_optional(std::make_from_tuple<T>(segments));
+    try {
+      return std::make_optional(segments);
+    } catch(const std::exception &) {
+      return {};
+    }
   }
 }
 
