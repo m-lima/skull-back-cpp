@@ -38,6 +38,12 @@ namespace {
     return fail(std::move(context), restinio::status_not_found());
   }
 
+#ifdef LOCAL_DEVELOPMENT
+  inline server::Handler emptyOk(Context && context) noexcept {
+    return context.createResponse(restinio::status_ok()).done();
+  }
+#endif
+
   template <typename T>
   server::Handler getOrStream(Context && context) noexcept {
     try {
@@ -77,6 +83,11 @@ namespace server {
     router->http_delete(constant::path::OCCURRENCE, [](auto request, auto) { return deleteOccurrence(request); });
     router->http_get(constant::path::RELOAD, [](auto request, auto) { return reload(request); });
     router->non_matched_request_handler([](auto request) { return notFound(request); });
+#ifdef LOCAL_DEVELOPMENT
+    router->add_handler(restinio::http_method_options(), constant::path::SKULL, [](auto request, auto) { return emptyOk(request); });
+    router->add_handler(restinio::http_method_options(), constant::path::QUICK, [](auto request, auto) { return emptyOk(request); });
+    router->add_handler(restinio::http_method_options(), constant::path::OCCURRENCE, [](auto request, auto) { return emptyOk(request); });
+#endif
 
     if (threadCount < 2) {
       spdlog::info("Listening on {:s}:{:d} on a single thread..", host, port);
