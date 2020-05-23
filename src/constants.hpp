@@ -8,15 +8,17 @@ namespace constant {
   }
 
   namespace path {
+    constexpr const auto SKULL = "/skull";
     constexpr const auto QUICK = "/quick";
-    constexpr const auto SKULL = "/";
+    constexpr const auto OCCURRENCE = "/occurrence";
     constexpr const auto RELOAD = "/reload";
   }
 
   namespace file {
     constexpr const auto ROOT = "/data";
-    constexpr const auto QUICK = "quick";
     constexpr const auto SKULL = "skull";
+    constexpr const auto QUICK = "quick";
+    constexpr const auto OCCURRENCE = "occurrence";
   }
 
   namespace header {

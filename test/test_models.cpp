@@ -1,35 +1,48 @@
 #include <gtest/gtest.h>
 
-#include "skull_value.hpp"
-#include "quick_value.hpp"
+#include "model.hpp"
 #include "user.hpp"
 
-TEST(SkullValue, json) {
-  SkullValue skull{"type", "1", "2"};
+TEST(Skull, json) {
+  Skull skull{"1", "nome", "cor", "icone", "2"};
   std::stringstream stream;
   skull.json(stream);
-  ASSERT_EQ(stream.str(), "{\"type\":\"type\",\"amount\":1,\"millis\":2}");
+  ASSERT_EQ(stream.str(), R"({"id":1,"name":"nome","color":"cor","icon":"icone","unitPrice":2})");
 }
 
-TEST(SkullValue, tsv) {
-  SkullValue skull{"type", "1", "2"};
+TEST(Skull, tsv) {
+  Skull skull{"1", "nome", "cor", "icone", "2"};
   std::stringstream stream;
   skull.tsv(stream);
-  ASSERT_EQ(stream.str(), "type\t1\t2");
+  ASSERT_EQ(stream.str(), "1\nome\tcor\ticone\t2");
 }
 
-TEST(QuickValue, json) {
-  QuickValue quick{"type", "1", "icon"};
+TEST(Quick, json) {
+  Quick quick{"1", "2"};
   std::stringstream stream;
   quick.json(stream);
-  ASSERT_EQ(stream.str(), "{\"type\":\"type\",\"amount\":1,\"icon\":\"icon\"}");
+  ASSERT_EQ(stream.str(), R"({"skull":1,"amount":2})");
 }
 
-TEST(QuickValue, tsv) {
-  QuickValue quick{"type", "1", "icon"};
+TEST(Quick, tsv) {
+  Quick quick{"1", "2"};
   std::stringstream stream;
   quick.tsv(stream);
-  ASSERT_EQ(stream.str(), "type\t1\ticon");
+  ASSERT_EQ(stream.str(), "1\t2");
+}
+
+TEST(Occurrence, json) {
+  Occurrence occurrence{"1", "2", "3", "4"};
+  std::stringstream stream;
+  occurrence.json(stream);
+  ASSERT_EQ(stream.str(), R"({"id":1,"skull":2,"amount":3,"millis":4})");
+}
+
+TEST(Occurrence, tsv) {
+  Occurrence occurrence{"1", "2", "3", "4"};
+  std::stringstream stream;
+  occurrence.json(stream);
+  ASSERT_EQ(stream.str(), "1\t2\t3\t4");
 }
 
 TEST(User, keeps_name_reference) {
@@ -42,22 +55,49 @@ TEST(User, keeps_name_reference) {
   ASSERT_STREQ(user->name, "username");
 }
 
-TEST(SkullValue, equals) {
-  SkullValue skull1{"type", "1", "2"};
-  SkullValue skull2{"type", "1", "2"};
-  SkullValue skull3{"type", "1", "3"};
+TEST(Skull, equals) {
+  Skull skull{"1", "nome", "farge", "ikon", "3"};
+  Skull skulls[] = {
+      {"1", "nome", "cor", "icone", "2"},
+      {"2", "nome", "cor", "icone", "2"},
+      {"1", "navn", "cor", "icone", "2"},
+      {"2", "navn", "cor", "icone", "2"}
+  };
 
-  ASSERT_EQ(skull1, skull2);
-  ASSERT_NE(skull1, skull3);
+  ASSERT_EQ(skulls[0], skull);
+
+  for (int i = 0; i < 3; ++i) {
+    for (int j = i+1; j < 4; ++j) {
+      ASSERT_NE(skulls[i], skulls[j]);
+    }
+  }
 }
 
-TEST(QuickValue, equals) {
-  QuickValue quick1{"type", "1", "2"};
-  QuickValue quick2{"type", "1", "2"};
-  QuickValue quick3{"type", "1", "3"};
+TEST(Quick, equals) {
+  Quick quick{"1", "2"};
+  Quick quicks[] = {
+      {"1", "2"},
+      {"2", "2"},
+      {"1", "3"},
+      {"2", "3"}
+  };
 
-  ASSERT_EQ(quick1, quick2);
-  ASSERT_NE(quick1, quick3);
+  ASSERT_EQ(quicks[0], quick);
+
+  for (int i = 0; i < 3; ++i) {
+    for (int j = i+1; j < 4; ++j) {
+      ASSERT_NE(quicks[i], quicks[j]);
+    }
+  }
+}
+
+TEST(Occurrence, equals) {
+  Occurrence occurrence{"1","2","3","4"};
+  Occurrence same{"1","5","6","7"};
+  Occurrence different{"5","2","3","4"};
+
+  ASSERT_EQ(occurrence, same);
+  ASSERT_NE(occurrence, different);
 }
 
 TEST(User, equals) {

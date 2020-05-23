@@ -8,8 +8,7 @@
 #include "constants.hpp"
 #include "file_handle.hpp"
 #include "format.hpp"
-#include "quick_value.hpp"
-#include "skull_value.hpp"
+#include "model.hpp"
 
 class Storage {
 private:
@@ -26,8 +25,9 @@ private:
     LockedVector & operator=(const LockedVector &) = delete;
   };
 
-  std::unordered_map<User, LockedVector<QuickValue>> mQuickValues;
-  std::unordered_map<User, LockedVector<SkullValue>> mSkullValues;
+  std::unordered_map<User, LockedVector<Skull>> mSkulls;
+  std::unordered_map<User, LockedVector<Quick>> mQuicks;
+  std::unordered_map<User, LockedVector<Occurrence>> mOccurrences;
 
   template <typename T>
   struct TypeProps {
@@ -63,7 +63,7 @@ public:
 
   [[nodiscard]]
   inline bool authorized(const User & user) const {
-    return user != constant::user::UNKNOWN && mQuickValues.find(user) != mQuickValues.cend();
+    return user != constant::user::UNKNOWN && mSkulls.find(user) != mSkulls.cend();
   }
 
   template <typename T>
@@ -123,18 +123,23 @@ public:
   }
 
   bool reload(const User & user) {
-    const auto quick = mQuickValues.find(user);
-    if (quick == mQuickValues.cend()) return false;
+    const auto skull = mSkulls.find(user);
+    if (skull == mSkulls.cend()) return false;
 
-    const auto skull = mSkullValues.find(user);
-    if (skull == mSkullValues.cend()) return false;
+    const auto quick = mQuicks.find(user);
+    if (quick == mQuicks.cend()) return false;
+
+    const auto occurrence = mOccurrences.find(user);
+    if (occurrence == mOccurrences.cend()) return false;
 
     std::thread loader{[&](const std::string && user){
-      std::lock_guard quickLock{quick->second.mutex};
       std::lock_guard skullLock{skull->second.mutex};
+      std::lock_guard quickLock{quick->second.mutex};
+      std::lock_guard occurrenceLock{occurrence->second.mutex};
 
-      load(user, quick->second.vector);
       load(user, skull->second.vector);
+      load(user, quick->second.vector);
+      load(user, occurrence->second.vector);
     }, std::string{user.name}};
     loader.detach();
 
@@ -152,13 +157,19 @@ public:
 };
 
 template <>
-struct Storage::TypeProps<QuickValue> {
-  static constexpr const auto & path = constant::file::QUICK;
-  static constexpr auto Storage::* const map = &Storage::mQuickValues;
+struct Storage::TypeProps<Skull> {
+  static constexpr const auto & path = constant::file::SKULL;
+  static constexpr auto Storage::* const map = &Storage::mSkulls;
 };
 
 template <>
-struct Storage::TypeProps<SkullValue> {
-  static constexpr const auto & path = constant::file::SKULL;
-  static constexpr auto Storage::* const map = &Storage::mSkullValues;
+struct Storage::TypeProps<Quick> {
+  static constexpr const auto & path = constant::file::QUICK;
+  static constexpr auto Storage::* const map = &Storage::mQuicks;
+};
+
+template <>
+struct Storage::TypeProps<Occurrence> {
+  static constexpr const auto & path = constant::file::OCCURRENCE;
+  static constexpr auto Storage::* const map = &Storage::mOccurrences;
 };
