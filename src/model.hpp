@@ -1,18 +1,30 @@
 #pragma once
 
-#include <charconv>
 #include <iomanip>
+#include <limits>
 #include <string>
 
 namespace {
   template<typename T>
-  T stot(std::string_view string) {
-    T t;
-    auto result = std::from_chars(string.data(), string.data() + string.size(), t);
-    if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
-      throw std::runtime_error{"invalid string input"};
+  T stot(std::string_view string);
+
+  template<>
+  unsigned short stot<unsigned short>(std::string_view string) {
+    std::string buffer{string};
+    auto integer = std::stoi(buffer);
+    if (integer < 0) {
+      throw std::runtime_error{"underflow"};
     }
-    return t;
+    if (integer > std::numeric_limits<unsigned short>::max()) {
+      throw std::runtime_error{"overflow"};
+    }
+    return static_cast<unsigned short>(integer);
+  }
+
+  template<>
+  long stot<long>(std::string_view string) {
+    std::string buffer{string};
+    return std::stol(buffer);
   }
 
   template<>
@@ -150,7 +162,7 @@ public:
   template <typename T>
   inline T & json(T & stream) const {
     stream << R"({"skull":)" << mSkull
-           << R"(","amount":)" << mAmount
+           << R"(,"amount":)" << mAmount
            << '}';
     return stream;
   }
