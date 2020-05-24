@@ -1,10 +1,10 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 WORKDIR /opt/skull
 
 # Installs
 RUN apt-get update && \
-    apt-get install -y \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
         git \
         cmake \
         g++ \
@@ -22,8 +22,8 @@ RUN conan remote add stiffstream https://api.bintray.com/conan/stiffstream/publi
           arch=x86_64\n\
           arch_build=x86_64\n\
           compiler=gcc\n\
-          compiler.version=7\n\
-          compiler.libcxx=libstdc++11\n\
+          compiler.version=9\n\
+          compiler.libcxx=libstdc++\n\
           build_type=Release\n\
           [options]\n\
           [build_requires]\n\
@@ -47,7 +47,7 @@ RUN cd build && \
     make
 
 # Slim down
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 WORKDIR /opt/skull
 
@@ -56,4 +56,4 @@ COPY --from=0 /opt/skull/build/bin/skull /opt/skull/skull
 EXPOSE 80
 
 ENTRYPOINT [ "./skull" ]
-CMD [ "-h", "", "-p", "80" ]
+CMD [ "-h", "", "-t", "1", "-p", "80" ]

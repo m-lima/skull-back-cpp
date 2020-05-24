@@ -5,12 +5,12 @@
 namespace {
   std::atomic<std::uint16_t> COUNTER;
 
-  inline std::string_view methodToString(restinio::http_method_t method) {
-    switch (method) {
-      case restinio::http_method_get(): return "GET";
-      case restinio::http_method_post(): return "POST";
-      case restinio::http_method_delete(): return "DELETE";
-      case restinio::http_method_options(): return "OPTIONS";
+  constexpr auto methodToString(restinio::http_method_id_t method) {
+    switch (method.raw_id()) {
+      case restinio::http_method_get().raw_id(): return "GET";
+      case restinio::http_method_post().raw_id(): return "POST";
+      case restinio::http_method_delete().raw_id(): return "DELETE";
+      case restinio::http_method_options().raw_id(): return "OPTIONS";
       default: return "UNKNOWN";
     }
   }

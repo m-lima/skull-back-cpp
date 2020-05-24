@@ -43,7 +43,7 @@ namespace fmt {
 
     template <typename FormatContext>
     auto format(const Context & context, FormatContext & ctx) {
-      return format_to(ctx.begin(), "[{:0>5}] ({:s})", context.id, context.user.name);
+      return format_to(ctx.out(), "[{:0>5}] ({:s})", context.id, context.user.name);
     }
   };
 }
