@@ -32,6 +32,15 @@ namespace {
     std::string buffer{string};
     return std::stof(buffer);
   }
+
+  template<typename T>
+  std::optional<T> fromOptional(std::string_view optionalString) {
+    if (optionalString.empty() || (optionalString.size() == 1 && optionalString[0] == '_')) {
+      return std::nullopt;
+    }
+
+    return stot<T>(optionalString);
+  }
 }
 
 class Skull {
@@ -41,9 +50,10 @@ private:
   std::string mColor;
   std::string mIcon;
   float mUnitPrice;
+  std::optional<float> mLimit;
 
 public:
-  static constexpr const auto size = 5;
+  static constexpr const auto size = 6;
 
   Skull(const Skull &) = delete;
   Skull(Skull &&) = default;
@@ -51,19 +61,21 @@ public:
   Skull & operator=(Skull &&) = default;
 
   template <typename A, typename B, typename C>
-  Skull(unsigned short id, A && name, B && color, C && icon, float unitPrice)
+  Skull(unsigned short id, A && name, B && color, C && icon, float unitPrice, std::optional<float> limit = {})
       : mId{id},
         mName{std::forward<A>(name)},
         mColor{std::forward<B>(color)},
         mIcon{std::forward<C>(icon)},
-        mUnitPrice{unitPrice} {}
+        mUnitPrice{unitPrice},
+        mLimit{limit} {}
 
   Skull(std::array<std::string_view, size> params)
       : mId{stot<unsigned short>(params[0])},
         mName{params[1]},
         mColor{params[2]},
         mIcon{params[3]},
-        mUnitPrice{stot<float>(params[4])} {}
+        mUnitPrice{stot<float>(params[4])},
+        mLimit{fromOptional<float>(params[5])} {}
 
   [[nodiscard]]
   inline const unsigned short & id() const {
@@ -90,6 +102,11 @@ public:
     return mUnitPrice;
   }
 
+  [[nodiscard]]
+  inline const std::optional<float> & limit() const {
+    return mLimit;
+  }
+
   inline bool operator==(const Skull & rhs) const {
     return mId == rhs.mId;
   }
@@ -104,8 +121,13 @@ public:
            << R"(,"name":")" << mName << '"'
            << R"(,"color":")" << mColor << '"'
            << R"(,"icon":")" << mIcon << '"'
-           << R"(,"unitPrice":)" << mUnitPrice
-           << '}';
+           << R"(,"unitPrice":)" << mUnitPrice;
+
+    if (mLimit.has_value()) {
+      stream << R"(,"limit":)" << mLimit.value();
+    }
+
+    stream << '}';
     return stream;
   }
 
@@ -115,7 +137,14 @@ public:
            << mName << '\t'
            << mColor << '\t'
            << mIcon << '\t'
-           << mUnitPrice;
+           << mUnitPrice << '\t';
+
+    if (mLimit.has_value()) {
+      stream << mLimit.value();
+    } else {
+      stream << '_';
+    }
+
     return stream;
   }
 };

@@ -125,9 +125,10 @@ namespace server {
                   query[constant::query::NAME],
                   query[constant::query::COLOR],
                   query[constant::query::ICON],
-                  restinio::value_or(query, constant::query::UNIT_PRICE, 0.0f)};
+                  restinio::value_or(query, constant::query::UNIT_PRICE, 0.0f),
+                  restinio::opt_value<float>(query, constant::query::LIMIT)};
 
-      if (value.name().empty() || value.color().empty() || value.icon().empty()) {
+    if (value.name().empty() || value.color().empty() || value.icon().empty()) {
         return badRequest(std::move(context));
       }
 
@@ -160,7 +161,8 @@ namespace server {
                   "",
                   "",
                   "",
-                  0.0f};
+                  0.0f,
+                  {}};
 
       if (value.id() == 0) {
         return badRequest(std::move(context));

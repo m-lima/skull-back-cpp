@@ -36,6 +36,7 @@ namespace constant {
     constexpr const auto COLOR = "color";
     constexpr const auto ICON = "icon";
     constexpr const auto UNIT_PRICE = "unitPrice";
+    constexpr const auto LIMIT = "limit";
     constexpr const auto SKULL = "skull";
     constexpr const auto AMOUNT = "amount";
     constexpr const auto MILLIS = "millis";
