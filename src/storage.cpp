@@ -22,14 +22,25 @@ namespace {
 
     segments[T::size - 1] = view.substr(index);
 
-    return std::make_optional(std::make_from_tuple<T>(segments));
+    try {
+      return std::make_optional(segments);
+    } catch(const std::exception &) {
+      return {};
+    }
   }
 }
 
 Storage::Storage() {
   UserIterator::forEach([this](const User & user) {
-    auto quick = mQuickValues.try_emplace(user, std::vector<QuickValue>{});
-    auto skull = mSkullValues.try_emplace(user, std::vector<SkullValue>{});
+    auto skull = mSkulls.try_emplace(user, std::vector<Skull>{});
+    auto quick = mQuicks.try_emplace(user, std::vector<Quick>{});
+    auto occurrence = mOccurrences.try_emplace(user, std::vector<Occurrence>{});
+
+    if (skull.second) {
+      load(user, skull.first->second.vector);
+    } else {
+      spdlog::warn("Failed to populate skull map for {:s}", user.name);
+    }
 
     if (quick.second) {
       load(user, quick.first->second.vector);
@@ -37,11 +48,12 @@ Storage::Storage() {
       spdlog::warn("Failed to populate quick map for {:s}", user.name);
     }
 
-    if (skull.second) {
-      load(user, skull.first->second.vector);
+    if (occurrence.second) {
+      load(user, occurrence.first->second.vector);
     } else {
-      spdlog::warn("Failed to populate skull map for {:s}", user.name);
+      spdlog::warn("Failed to populate occurrence map for {:s}", user.name);
     }
+
   });
 }
 
