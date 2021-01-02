@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM debian:stable-slim
 
 WORKDIR /opt/skull
 
@@ -13,8 +13,7 @@ RUN apt-get update && \
     pip3 install conan
 
 # Environment
-RUN conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && \
-    mkdir build && \
+RUN mkdir build && \
     mkdir -p ~/.conan/profiles && \
     echo "[settings]\n\
           os=Linux\n\
@@ -22,8 +21,8 @@ RUN conan remote add stiffstream https://api.bintray.com/conan/stiffstream/publi
           arch=x86_64\n\
           arch_build=x86_64\n\
           compiler=gcc\n\
-          compiler.version=9\n\
-          compiler.libcxx=libstdc++\n\
+          compiler.version=8.3\n\
+          compiler.libcxx=libstdc++11\n\
           build_type=Release\n\
           [options]\n\
           [build_requires]\n\
@@ -47,7 +46,7 @@ RUN cd build && \
     make
 
 # Slim down
-FROM ubuntu:focal
+FROM debian:stable-slim
 
 WORKDIR /opt/skull
 

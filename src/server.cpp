@@ -8,15 +8,13 @@ namespace {
   Storage storage{};
 
   struct ServerMode {
-    using SingleThread = asio::executor;
-    using MultiThread = asio::strand<asio::executor>;
+    using SingleThread = boost::asio::executor;
+    using MultiThread = boost::asio::strand<boost::asio::executor>;
   };
 
-  template <typename Strand>
   using ServerTraits = restinio::traits_t<restinio::asio_timer_manager_t,
       restinio::null_logger_t,
-      restinio::router::express_router_t<>,
-      Strand>;
+      restinio::router::express_router_t<>>;
 
   inline server::Handler fail(Context && context, restinio::http_status_line_t && status) noexcept {
     return context.createResponse(std::move(status)).connectionClose().done();
@@ -92,14 +90,14 @@ namespace server {
     if (threadCount < 2) {
       spdlog::info("Listening on {:s}:{:d} on a single thread..", host, port);
 
-      restinio::run(restinio::on_this_thread<ServerTraits<ServerMode::SingleThread>>()
+      restinio::run(restinio::on_this_thread<ServerTraits>()
                         .address(std::move(host))
                         .port(port)
                         .request_handler(std::move(router)));
     } else {
       spdlog::info("Listening on {:s}:{:d} on {:d} threads..", host, port, threadCount);
 
-      restinio::run(restinio::on_thread_pool<ServerTraits<ServerMode::MultiThread>>(threadCount)
+      restinio::run(restinio::on_thread_pool<ServerTraits>(threadCount)
                         .address(std::move(host))
                         .port(port)
                         .request_handler(std::move(router)));
