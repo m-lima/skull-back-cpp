@@ -27,5 +27,4 @@ include
 # External projects
 ext/*/pack
 
-cfg
 data
