@@ -55,4 +55,4 @@ COPY --from=0 /opt/skull/build/bin/skull /opt/skull/skull
 EXPOSE 80
 
 ENTRYPOINT [ "./skull" ]
-CMD [ "-h", "", "-t", "1", "-p", "80" ]
+CMD [ "-h", "0.0.0.0", "-t", "1", "-p", "80" ]
