@@ -1,4 +1,4 @@
-docker build -t skull .
+docker build -t skull:cpp .
 docker stop skull
 docker rm skull
 docker create \
